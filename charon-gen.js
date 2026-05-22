@@ -15,10 +15,14 @@ const GAMEGEN_API =
   "https://gamegen.lol/api/mg_cca51ec305a5494a946454fcc21cf1c3/generate/";
 
 const STORE_DETAILS_URL =
-  "https://store.steampowered.com/api/appdetails?l=en&cc=us&appids=";
+  "https://store.steampowered.com/api/appdetails?appids=";
+const STORE_DETAILS_FILTERS = "basic,release_date,publishers";
 
 const STEAMSPY_DETAILS_URL =
   "https://steamspy.com/api.php?request=appdetails&appid=";
+
+const GAME_DETAILS_CACHE_PREFIX = "charon.game.";
+const GAME_DETAILS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 const DIRECT_JSON_PROXY = {
   name: "direct",
@@ -36,35 +40,37 @@ const ALLORIGINS_JSON_PROXY = {
   }
 };
 
-const JINA_JSON_PROXY = {
-  name: "jina",
-  makeUrl: (url) => `https://r.jina.ai/http://${url}`,
-  parse: async (response) => {
-    const text = await response.text();
-    const marker = "Markdown Content:";
-    const markerIndex = text.indexOf(marker);
-    const jsonText = markerIndex >= 0 ? text.slice(markerIndex + marker.length).trim() : text.trim();
-    return JSON.parse(jsonText);
-  }
-};
-
 const CORSPROXY_JSON_PROXY = {
   name: "corsproxy",
   makeUrl: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   parse: (response) => response.json()
 };
 
+const CODETABS_JSON_PROXY = {
+  name: "codetabs",
+  makeUrl: (url) => `https://api.codetabs.com/v1/proxy/?quest=${url.replace(/&/g, "%26")}`,
+  parse: (response) => response.json()
+};
+
 const CORS_JSON_PROXIES = [
   DIRECT_JSON_PROXY,
-  ALLORIGINS_JSON_PROXY,
-  CORSPROXY_JSON_PROXY
+  CODETABS_JSON_PROXY,
+  CORSPROXY_JSON_PROXY,
+  ALLORIGINS_JSON_PROXY
 ];
 
 const STEAM_STORE_JSON_PROXIES = [
   DIRECT_JSON_PROXY,
-  JINA_JSON_PROXY,
-  ALLORIGINS_JSON_PROXY,
-  CORSPROXY_JSON_PROXY
+  CODETABS_JSON_PROXY,
+  CORSPROXY_JSON_PROXY,
+  ALLORIGINS_JSON_PROXY
+];
+
+const STEAMSPY_JSON_PROXIES = [
+  DIRECT_JSON_PROXY,
+  CODETABS_JSON_PROXY,
+  CORSPROXY_JSON_PROXY,
+  ALLORIGINS_JSON_PROXY
 ];
 
 const form = document.querySelector("#generatorForm");
@@ -481,6 +487,62 @@ function steamAsset(appId, fileName) {
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/${fileName}`;
 }
 
+function cacheKey(appId) {
+  return `${GAME_DETAILS_CACHE_PREFIX}${appId}`;
+}
+
+function normalizeGameDetails(appId, game) {
+  if (!game || typeof game !== "object") {
+    throw new Error("Game details were empty.");
+  }
+
+  const name = String(game.name || "").trim();
+  if (!name) throw new Error("Game name was missing.");
+
+  const publishers = Array.isArray(game.publishers)
+    ? game.publishers.filter(Boolean)
+    : game.publisher
+      ? [game.publisher]
+      : [];
+
+  const releaseDate =
+    game.release_date && typeof game.release_date === "object"
+      ? game.release_date
+      : { date: game.release_date || game.releaseDate || "Unknown" };
+
+  return {
+    name,
+    publishers,
+    release_date: {
+      date: releaseDate.date || "Unknown",
+      coming_soon: Boolean(releaseDate.coming_soon)
+    },
+    header_image: game.header_image || steamAsset(appId, "header.jpg"),
+    capsule_image: game.capsule_image || steamAsset(appId, "capsule_616x353.jpg")
+  };
+}
+
+function readCachedGameDetails(appId) {
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey(appId)) || "null");
+    if (!cached || Date.now() - cached.savedAt > GAME_DETAILS_CACHE_TTL) return null;
+    return normalizeGameDetails(appId, cached.game);
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedGameDetails(appId, game) {
+  try {
+    localStorage.setItem(cacheKey(appId), JSON.stringify({
+      savedAt: Date.now(),
+      game: normalizeGameDetails(appId, game)
+    }));
+  } catch {
+    // Storage can be blocked in strict browser modes; the live fetch still works.
+  }
+}
+
 function renderGameLoading() {
   gameDetails.classList.remove("is-empty");
   gameDetails.innerHTML = `
@@ -529,43 +591,31 @@ function renderGameDetails(appId, game) {
 }
 
 async function fetchStoreGameDetails(appId) {
-  const data = await fetchJsonFirst(`${STORE_DETAILS_URL}${appId}`, {
-    timeout: 6500,
+  const data = await fetchJsonFirst(`${STORE_DETAILS_URL}${appId}&filters=${STORE_DETAILS_FILTERS}`, {
+    timeout: 12000,
     candidates: STEAM_STORE_JSON_PROXIES
   });
   const entry = data?.[appId];
   if (!entry?.success || !entry.data) {
     throw new Error("Steam did not return game data.");
   }
-  return entry.data;
+  return normalizeGameDetails(appId, entry.data);
 }
 
 async function fetchBackupGameDetails(appId) {
-  const data = await fetchJsonWithFallback(`${STEAMSPY_DETAILS_URL}${appId}`, { timeout: 6500 });
+  const data = await fetchJsonFirst(`${STEAMSPY_DETAILS_URL}${appId}`, {
+    timeout: 12000,
+    candidates: STEAMSPY_JSON_PROXIES
+  });
   if (!data?.name) throw new Error("Backup game details were unavailable.");
 
-  return {
+  return normalizeGameDetails(appId, {
     name: data.name,
     publishers: data.publisher ? [data.publisher] : [],
     release_date: { date: data.release_date || "Not listed" },
-    genres: String(data.genre || "")
-      .split(",")
-      .map((description) => ({ description: description.trim() }))
-      .filter((genre) => genre.description),
-    platforms: {},
     header_image: steamAsset(appId, "header.jpg"),
-    capsule_image: steamAsset(appId, "capsule_616x353.jpg"),
-    short_description: "Store details were blocked in this browser, so Charon is showing fast backup game details while the package search continues."
-  };
-}
-
-function basicGameDetails(appId) {
-  return {
-    name: `Steam App ${appId}`,
-    publishers: [],
-    release_date: { date: "Unknown" },
-    header_image: steamAsset(appId, "header.jpg")
-  };
+    capsule_image: steamAsset(appId, "capsule_616x353.jpg")
+  });
 }
 
 function isActiveRequest(requestId) {
@@ -573,10 +623,12 @@ function isActiveRequest(requestId) {
 }
 
 async function loadGameDetails(appId, requestId) {
-  renderGameDetails(appId, {
-    ...basicGameDetails(appId),
-    name: `Steam App ${appId}`
-  });
+  const cached = readCachedGameDetails(appId);
+  if (cached) {
+    renderGameDetails(appId, cached);
+  } else {
+    renderGameLoading();
+  }
 
   const storeDetails = fetchStoreGameDetails(appId);
   const backupDetails = fetchBackupGameDetails(appId);
@@ -584,16 +636,19 @@ async function loadGameDetails(appId, requestId) {
   try {
     const game = await Promise.any([storeDetails, backupDetails]);
     if (!isActiveRequest(requestId)) return;
+    writeCachedGameDetails(appId, game);
     renderGameDetails(appId, game);
   } catch (error) {
     console.debug("Game details failed", error);
     if (!isActiveRequest(requestId)) return;
-    renderGameDetails(appId, basicGameDetails(appId));
+    if (!cached) renderGameError(appId, "Steam details are unavailable right now. Please try again.");
   }
 
   storeDetails
     .then((game) => {
-      if (isActiveRequest(requestId)) renderGameDetails(appId, game);
+      if (!isActiveRequest(requestId)) return;
+      writeCachedGameDetails(appId, game);
+      renderGameDetails(appId, game);
     })
     .catch((error) => console.debug("Steam Store details failed", error));
 }
@@ -630,14 +685,18 @@ async function resolvePackage(appId) {
   return resolveExternalApi(appId);
 }
 
-async function handleSubmit(event) {
-  event.preventDefault();
+function syncAppIdUrl(appId) {
+  if (!window.history?.replaceState) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("appid", appId);
+  window.history.replaceState(null, "", url);
+}
+
+async function generateForAppId(appId) {
   clearDownload();
-
-  const appId = normalizeAppId(input.value);
-
   try {
     assertAppId(appId);
+    syncAppIdUrl(appId);
     setBusy(true);
     setStatus("Fetching game banner and checking package...", 8);
 
@@ -654,7 +713,19 @@ async function handleSubmit(event) {
   }
 }
 
+async function handleSubmit(event) {
+  event.preventDefault();
+  const appId = normalizeAppId(input.value);
+  generateForAppId(appId);
+}
+
 form.addEventListener("submit", handleSubmit);
+
+const initialAppId = normalizeAppId(new URLSearchParams(window.location.search).get("appid"));
+if (/^\d+$/.test(initialAppId)) {
+  input.value = initialAppId;
+  window.setTimeout(() => generateForAppId(initialAppId), 0);
+}
 
 window.CharonGen = {
   resolveDatabase,

@@ -126,8 +126,10 @@ img {
   gap: 20px;
   border: 1px solid var(--border);
   border-radius: 22px;
-  background: rgba(8, 8, 10, 0.72);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 42%),
+    rgba(8, 8, 10, 0.76);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32), 0 0 42px rgba(5, 255, 247, 0.08);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   backface-visibility: hidden;
@@ -159,26 +161,64 @@ img {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .nav-links a {
-  padding: 10px 14px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 10px 15px;
   color: var(--soft);
   text-decoration: none;
   border-radius: 999px;
-  border: 1px solid transparent;
-  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--nav-accent, var(--cyan)) 18%, transparent), rgba(255, 255, 255, 0.035)),
+    rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 20px color-mix(in srgb, var(--nav-accent, var(--cyan)) 14%, transparent);
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease;
+}
+
+.nav-links a:nth-child(1) {
+  --nav-accent: var(--cyan);
+}
+
+.nav-links a:nth-child(2) {
+  --nav-accent: var(--purple);
+}
+
+.nav-links a:nth-child(3) {
+  --nav-accent: var(--discord);
+}
+
+.nav-links a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--nav-accent) 36%, transparent), transparent 62%);
+  transition: opacity 180ms ease;
 }
 
 .nav-links a:hover,
 .nav-links a:focus-visible,
 .nav-links a[aria-current="page"] {
   color: var(--text);
-  border-color: rgba(5, 255, 247, 0.22);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: color-mix(in srgb, var(--nav-accent, var(--cyan)) 42%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--nav-accent, var(--cyan)) 25%, transparent), rgba(255, 255, 255, 0.06)),
+    rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 28px color-mix(in srgb, var(--nav-accent, var(--cyan)) 24%, transparent);
   outline: none;
+}
+
+.nav-links a:hover::before,
+.nav-links a:focus-visible::before,
+.nav-links a[aria-current="page"]::before {
+  opacity: 1;
 }
 
 .section-shell {
@@ -394,28 +434,40 @@ p {
 }
 
 .showcase {
+  width: min(1420px, calc(100% - 32px));
   margin-bottom: 96px;
 }
 
 .screens {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.screens picture,
+.screens img {
+  width: 100%;
+  height: auto;
+}
+
+.screens picture {
+  display: block;
 }
 
 .screens img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 20px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), 0 0 36px rgba(5, 255, 247, 0.08);
   backface-visibility: hidden;
 }
 
-.screens img:first-child {
-  grid-row: span 2;
+.screens picture:nth-child(3) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(820px, 100%);
 }
 
 .guide-grid {
@@ -631,8 +683,9 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .screens img:first-child {
-    grid-row: auto;
+  .screens picture:nth-child(3) {
+    grid-column: auto;
+    width: 100%;
   }
 
   .metric-strip {
@@ -654,7 +707,6 @@ p {
 
 @supports (content-visibility: auto) {
   .feature-grid,
-  .showcase,
   .guide-grid,
   .discord-section {
     content-visibility: auto;
