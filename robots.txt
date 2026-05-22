@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://charon.co.in/sitemap.xml

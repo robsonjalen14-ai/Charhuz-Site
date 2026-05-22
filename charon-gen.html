@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080808">
+  <meta name="color-scheme" content="dark">
+  <title>Charon Gen - Steam App ID ZIP Generator | Charon</title>
+  <meta name="description" content="Use Charon Gen to enter a Steam App ID, preview the game banner, and generate a ZIP-ready Lua package directly from your browser.">
+  <meta name="keywords" content="Charon Gen, Steam App ID generator, Lua ZIP generator, Steam manifest generator, Charon web generator">
+  <meta name="author" content="Charon">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="application-name" content="Charon Gen">
+  <meta name="apple-mobile-web-app-title" content="Charon Gen">
+  <link rel="canonical" href="https://charon.co.in/charon-gen.html">
+  <meta property="og:title" content="Charon Gen - Steam App ID ZIP Generator">
+  <meta property="og:description" content="Preview a Steam game banner and generate ZIP-ready Lua packages from a Steam App ID.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://charon.co.in/charon-gen.html">
+  <meta property="og:site_name" content="Charon">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://charon.co.in/images/screenshot1.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Charon Gen - Steam App ID ZIP Generator">
+  <meta name="twitter:description" content="Generate ZIP-ready Lua packages from a Steam App ID in your browser.">
+  <meta name="twitter:image" content="https://charon.co.in/images/screenshot1.png">
+
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://store.steampowered.com">
+  <link rel="preconnect" href="https://cdn.cloudflare.steamstatic.com">
+  <link rel="preconnect" href="https://raw.githubusercontent.com">
+  <link rel="stylesheet" href="style.css?v=20260522j">
+  <link rel="stylesheet" href="charon-gen.css?v=20260522j">
+</head>
+<body>
+  <div class="site-bg" aria-hidden="true">
+    <span class="mesh mesh-a"></span>
+    <span class="mesh mesh-b"></span>
+    <span class="grid-glow"></span>
+  </div>
+
+  <header class="topbar" data-reveal>
+    <a class="brand" href="index.html" aria-label="Charon home">
+      <img src="images/charon-mark-nav.png" alt="" width="42" height="42" decoding="async">
+      <img class="brand-logo" src="images/charon-logo-nav.png" alt="Charon" width="158" height="44" decoding="async">
+    </a>
+    <nav class="nav-links" aria-label="Primary navigation">
+      <a href="charon-gen.html" aria-current="page">Charon Gen</a>
+      <a href="index.html#guide">Guide</a>
+      <a href="index.html#discord">Discord Server</a>
+    </nav>
+  </header>
+
+  <main class="gen-page">
+    <section class="gen-hero section-shell" data-reveal>
+      <p class="eyebrow">Web Lua Generator</p>
+      <h1>Charon Gen</h1>
+      <p>Enter a Steam App ID. Charon Gen shows the full game banner, then prepares a ZIP package using the same source order as the desktop app.</p>
+    </section>
+
+    <section class="generator-layout section-shell" data-reveal>
+      <form class="generator-form glass-panel" id="generatorForm">
+        <div>
+          <label for="appid">Steam App ID</label>
+          <p>Use the numeric App ID from Steam. Example: 413150.</p>
+        </div>
+        <div class="input-row">
+          <input id="appid" name="appid" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Enter App ID" aria-describedby="statusText" required>
+          <button class="btn btn-primary" id="generateBtn" type="submit">Generate ZIP</button>
+        </div>
+      </form>
+
+      <div class="status-panel glass-panel" aria-live="polite">
+        <div class="status-line">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Ready. Enter an App ID to begin.</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <span id="progressBar"></span>
+        </div>
+      </div>
+
+      <section class="game-details glass-panel is-empty" id="gameDetails" aria-live="polite">
+        <div class="game-empty">
+          <span class="empty-icon">ID</span>
+          <h2>Game banner appears here</h2>
+          <p>Charon Gen shows the full Steam banner and App ID before the download result.</p>
+        </div>
+      </section>
+
+      <section class="download-panel glass-panel is-hidden" id="downloadPanel" aria-live="polite">
+        <div>
+          <p class="eyebrow" id="downloadSource">Package ready</p>
+          <h2 id="downloadTitle">Download ZIP</h2>
+          <p id="downloadDescription">Your package is ready.</p>
+        </div>
+        <a class="btn btn-download" id="downloadLink" href="#" download>Download ZIP</a>
+      </section>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <img src="images/charon-mark-nav.png" alt="" width="34" height="34" loading="lazy" decoding="async">
+    <span>(c) 2026 Charon. Web generator for ZIP-ready Lua packages.</span>
+  </footer>
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Charon Gen",
+      "url": "https://charon.co.in/charon-gen.html",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "description": "Browser-based Steam App ID ZIP generator for Charon Lua packages.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Charon",
+        "url": "https://charon.co.in/"
+      }
+    }
+  </script>
+  <script src="charon-gen.js?v=20260522k" defer></script>
+</body>
+</html>
