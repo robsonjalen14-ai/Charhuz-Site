@@ -17,6 +17,8 @@ const GAMEGEN_API =
 const STORE_DETAILS_URL =
   "https://store.steampowered.com/api/appdetails?appids=";
 const STORE_DETAILS_FILTERS = "basic,release_date,publishers";
+const STEAM_SUGGEST_URL =
+  "https://store.steampowered.com/search/suggest";
 
 const STEAMSPY_DETAILS_URL =
   "https://steamspy.com/api.php?request=appdetails&appid=";
@@ -73,9 +75,44 @@ const STEAMSPY_JSON_PROXIES = [
   ALLORIGINS_JSON_PROXY
 ];
 
+const DIRECT_TEXT_PROXY = {
+  name: "direct",
+  makeUrl: (url) => url,
+  parse: (response) => response.text()
+};
+
+const CODETABS_TEXT_PROXY = {
+  name: "codetabs",
+  makeUrl: (url) => `https://api.codetabs.com/v1/proxy/?quest=${url.replace(/&/g, "%26")}`,
+  parse: (response) => response.text()
+};
+
+const CORSPROXY_TEXT_PROXY = {
+  name: "corsproxy",
+  makeUrl: (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  parse: (response) => response.text()
+};
+
+const ALLORIGINS_TEXT_PROXY = {
+  name: "allorigins",
+  makeUrl: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  parse: async (response) => {
+    const data = await response.json();
+    return typeof data.contents === "string" ? data.contents : "";
+  }
+};
+
+const STEAM_SUGGEST_PROXIES = [
+  DIRECT_TEXT_PROXY,
+  CODETABS_TEXT_PROXY,
+  CORSPROXY_TEXT_PROXY,
+  ALLORIGINS_TEXT_PROXY
+];
+
 const form = document.querySelector("#generatorForm");
 const input = document.querySelector("#appid");
 const button = document.querySelector("#generateBtn");
+const suggestionList = document.querySelector("#suggestionList");
 const statusText = document.querySelector("#statusText");
 const statusDot = document.querySelector("#statusDot");
 const progressBar = document.querySelector("#progressBar");
@@ -88,6 +125,10 @@ const downloadLink = document.querySelector("#downloadLink");
 
 let currentBlobUrl = "";
 let activeRequestId = 0;
+let suggestionRequestId = 0;
+let suggestionTimer = 0;
+let activeSuggestionIndex = -1;
+let currentSuggestions = [];
 
 function setStatus(message, percent = 0, type = "info") {
   statusText.textContent = message;
@@ -112,13 +153,132 @@ function clearDownload() {
 }
 
 function normalizeAppId(value) {
-  return String(value || "").trim();
+  const raw = String(value || "").trim();
+  const bracketMatch = raw.match(/\((\d+)\)\s*$/);
+  if (bracketMatch) return bracketMatch[1];
+  const numericMatch = raw.match(/^\d+$/);
+  if (numericMatch) return raw;
+  return raw;
 }
 
 function assertAppId(appId) {
   if (!/^\d+$/.test(appId)) {
     throw new Error("Enter a valid numeric Steam App ID.");
   }
+}
+
+function suggestionUrl(term) {
+  const url = new URL(STEAM_SUGGEST_URL);
+  url.searchParams.set("term", term);
+  url.searchParams.set("f", "games");
+  url.searchParams.set("cc", "US");
+  url.searchParams.set("l", "english");
+  return url.toString();
+}
+
+function parseSteamSuggestions(html, term) {
+  const parser = new DOMParser();
+  const documentHtml = parser.parseFromString(String(html || ""), "text/html");
+  const normalizedTerm = String(term || "").trim().toLowerCase();
+  const seen = new Set();
+  const suggestions = [];
+
+  documentHtml.querySelectorAll("a[href*='/app/']").forEach((anchor) => {
+    const href = anchor.getAttribute("href") || "";
+    const match = href.match(/\/app\/(\d+)/);
+    if (!match) return;
+    const appId = match[1];
+    if (seen.has(appId)) return;
+
+    const name =
+      anchor.querySelector(".match_name")?.textContent?.trim() ||
+      anchor.textContent?.replace(/\s+/g, " ").trim();
+    if (!name) return;
+
+    seen.add(appId);
+    suggestions.push({
+      name,
+      appId,
+      startsWithTerm: normalizedTerm ? name.toLowerCase().startsWith(normalizedTerm) : false
+    });
+  });
+
+  return suggestions
+    .sort((left, right) => Number(right.startsWithTerm) - Number(left.startsWithTerm) || left.name.localeCompare(right.name))
+    .slice(0, 25);
+}
+
+function hideSuggestions() {
+  suggestionList.classList.remove("is-open");
+  suggestionList.innerHTML = "";
+  input.setAttribute("aria-expanded", "false");
+  activeSuggestionIndex = -1;
+}
+
+function renderSuggestions(suggestions) {
+  currentSuggestions = suggestions;
+  activeSuggestionIndex = suggestions.length ? 0 : -1;
+  if (!suggestions.length) {
+    hideSuggestions();
+    return;
+  }
+
+  suggestionList.innerHTML = suggestions.map((item, index) => `
+    <button class="suggestion-item ${index === activeSuggestionIndex ? "is-active" : ""}" type="button" role="option" aria-selected="${index === activeSuggestionIndex ? "true" : "false"}" data-index="${index}">
+      <span class="suggestion-name">${escapeHtml(item.name)}</span>
+      <span class="suggestion-appid">${escapeHtml(item.appId)}</span>
+    </button>
+  `).join("");
+  suggestionList.classList.add("is-open");
+  input.setAttribute("aria-expanded", "true");
+}
+
+function updateActiveSuggestion(nextIndex) {
+  if (!currentSuggestions.length) return;
+  activeSuggestionIndex = (nextIndex + currentSuggestions.length) % currentSuggestions.length;
+  suggestionList.querySelectorAll(".suggestion-item").forEach((item, index) => {
+    const active = index === activeSuggestionIndex;
+    item.classList.toggle("is-active", active);
+    item.setAttribute("aria-selected", active ? "true" : "false");
+    if (active) item.scrollIntoView({ block: "nearest" });
+  });
+}
+
+function chooseSuggestion(index = activeSuggestionIndex) {
+  const selected = currentSuggestions[index];
+  if (!selected) return false;
+  input.value = selected.appId;
+  setStatus(`Selected ${selected.name} (${selected.appId}).`, 0);
+  hideSuggestions();
+  return true;
+}
+
+async function loadSuggestions(term, requestId) {
+  try {
+    const html = await fetchTextWithFallback(suggestionUrl(term), {
+      timeout: 7000,
+      candidates: STEAM_SUGGEST_PROXIES
+    });
+    if (requestId !== suggestionRequestId) return;
+    renderSuggestions(parseSteamSuggestions(html, term));
+  } catch {
+    if (requestId === suggestionRequestId) hideSuggestions();
+  }
+}
+
+function scheduleSuggestions() {
+  window.clearTimeout(suggestionTimer);
+  const term = input.value.trim();
+  if (!term || /^\d+$/.test(term)) {
+    suggestionRequestId += 1;
+    hideSuggestions();
+    return;
+  }
+
+  suggestionTimer = window.setTimeout(() => {
+    const requestId = ++suggestionRequestId;
+    loadSuggestions(term, requestId);
+  }, 220);
 }
 
 function encodeFileName(fileName) {
@@ -195,6 +355,28 @@ async function fetchJsonFirst(url, options = {}) {
         });
     });
   });
+}
+
+async function fetchTextWithFallback(url, options = {}) {
+  let lastError;
+  const timeout = options.timeout || 8000;
+  const candidates = options.candidates || STEAM_SUGGEST_PROXIES;
+
+  for (const candidateConfig of candidates) {
+    const candidate = candidateConfig.makeUrl(url);
+    try {
+      const response = await fetchWithTimeout(candidate, {
+        timeout,
+        headers: { Accept: "text/html, text/plain" }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await candidateConfig.parse(response);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("Suggestion request failed.");
 }
 
 async function fetchBytesFile(url) {
@@ -694,6 +876,7 @@ function syncAppIdUrl(appId) {
 
 async function generateForAppId(appId) {
   clearDownload();
+  hideSuggestions();
   try {
     assertAppId(appId);
     syncAppIdUrl(appId);
@@ -720,6 +903,36 @@ async function handleSubmit(event) {
 }
 
 form.addEventListener("submit", handleSubmit);
+input.addEventListener("input", scheduleSuggestions);
+input.addEventListener("keydown", (event) => {
+  if (!suggestionList.classList.contains("is-open")) return;
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    updateActiveSuggestion(activeSuggestionIndex + 1);
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    updateActiveSuggestion(activeSuggestionIndex - 1);
+  } else if (event.key === "Enter" && currentSuggestions.length) {
+    event.preventDefault();
+    chooseSuggestion();
+  } else if (event.key === "Escape") {
+    hideSuggestions();
+  }
+});
+input.addEventListener("blur", () => {
+  window.setTimeout(hideSuggestions, 140);
+});
+suggestionList.addEventListener("click", (event) => {
+  const item = event.target.closest(".suggestion-item");
+  if (!item) return;
+  chooseSuggestion(Number(item.dataset.index));
+  input.focus();
+});
+suggestionList.addEventListener("mousemove", (event) => {
+  const item = event.target.closest(".suggestion-item");
+  if (!item) return;
+  updateActiveSuggestion(Number(item.dataset.index));
+});
 
 const initialAppId = normalizeAppId(new URLSearchParams(window.location.search).get("appid"));
 if (/^\d+$/.test(initialAppId)) {
@@ -736,5 +949,7 @@ window.CharonGen = {
   generateLuaZip,
   loadGameDetails,
   fetchStoreGameDetails,
-  fetchBackupGameDetails
+  fetchBackupGameDetails,
+  suggestionUrl,
+  parseSteamSuggestions
 };

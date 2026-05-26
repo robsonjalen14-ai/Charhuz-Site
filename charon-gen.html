@@ -36,8 +36,8 @@
   <link rel="preconnect" href="https://store.steampowered.com">
   <link rel="preconnect" href="https://cdn.cloudflare.steamstatic.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com">
-  <link rel="stylesheet" href="style.css?v=20260522o">
-  <link rel="stylesheet" href="charon-gen.css?v=20260522o">
+  <link rel="stylesheet" href="style.css?v=20260526a">
+  <link rel="stylesheet" href="charon-gen.css?v=20260526a">
 </head>
 <body>
   <div class="site-bg" aria-hidden="true">
@@ -66,14 +66,25 @@
     </section>
 
     <section class="generator-layout section-shell" data-reveal>
+      <section class="support-notice glass-panel">
+        <div>
+          <strong>Need to request a manifest or report a broken file?</strong>
+          <p>Join the Charon community for manifest requests, fixes, support, and updates.</p>
+        </div>
+        <a class="btn btn-support" href="index.html#discord">Open Discord Section</a>
+      </section>
+
       <form class="generator-form glass-panel" id="generatorForm">
         <div>
-          <label for="appid">Steam App ID</label>
-          <p>Use the numeric App ID from Steam. Example: 413150.</p>
+          <label for="appid">Steam Game or App ID</label>
+          <p>Type a game name or paste the numeric App ID. Example: 413150.</p>
         </div>
-        <div class="input-row">
-          <input id="appid" name="appid" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Enter App ID" aria-describedby="statusText" required>
-          <button class="btn btn-primary" id="generateBtn" type="submit">Generate ZIP</button>
+        <div class="input-wrap">
+          <div class="input-row">
+            <input id="appid" name="appid" type="search" autocomplete="off" placeholder="Search game name or enter App ID" aria-describedby="statusText" aria-controls="suggestionList" aria-expanded="false" required>
+            <button class="btn btn-primary" id="generateBtn" type="submit">Generate ZIP</button>
+          </div>
+          <div class="suggestion-list" id="suggestionList" role="listbox" aria-label="Steam game suggestions"></div>
         </div>
       </form>
 
@@ -127,6 +138,6 @@
       }
     }
   </script>
-  <script src="charon-gen.js?v=20260522o" defer></script>
+  <script src="charon-gen.js?v=20260526a" defer></script>
 </body>
 </html>
