@@ -213,6 +213,19 @@ function parseSteamSuggestions(html, term) {
     .slice(0, 25);
 }
 
+function steamSuggestionImageCandidates(appId, image = "") {
+  const id = String(appId || "").trim();
+  return [
+    image,
+    id ? steamAsset(id, "capsule_sm_120.jpg") : "",
+    id ? steamAsset(id, "capsule_231x87.jpg") : "",
+    id ? steamAsset(id, "capsule_467x181.jpg") : "",
+    id ? steamAsset(id, "header.jpg") : ""
+  ].map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .filter((item, index, list) => list.indexOf(item) === index);
+}
+
 function hideSuggestions() {
   suggestionList.classList.remove("is-open");
   suggestionList.innerHTML = "";
@@ -242,6 +255,52 @@ function renderSuggestions(suggestions) {
   `).join("");
   suggestionList.classList.add("is-open");
   input.setAttribute("aria-expanded", "true");
+}
+
+function renderSuggestions(suggestions) {
+  currentSuggestions = suggestions;
+  activeSuggestionIndex = suggestions.length ? 0 : -1;
+  if (!suggestions.length) {
+    hideSuggestions();
+    return;
+  }
+
+  suggestionList.innerHTML = suggestions.map((item, index) => {
+    const imageCandidates = steamSuggestionImageCandidates(item.appId, item.image);
+    const thumb = imageCandidates.length
+      ? `<img src="${escapeHtml(imageCandidates[0])}" alt="" loading="lazy" decoding="async" data-index="0" data-candidates="${escapeHtml(imageCandidates.join("|"))}">`
+      : `ID ${escapeHtml(item.appId)}`;
+
+    return `
+      <button class="suggestion-item ${index === activeSuggestionIndex ? "is-active" : ""}" type="button" role="option" aria-selected="${index === activeSuggestionIndex ? "true" : "false"}" data-index="${index}">
+        <span class="suggestion-thumb ${imageCandidates.length ? "" : "is-fallback"}">${thumb}</span>
+        <span class="suggestion-copy">
+          <span class="suggestion-name">${escapeHtml(item.name)}</span>
+          <span class="suggestion-meta">Steam App ID: ${escapeHtml(item.appId)}${item.price ? ` - ${escapeHtml(item.price)}` : ""}</span>
+        </span>
+        <span class="suggestion-appid">${escapeHtml(item.appId)}</span>
+      </button>
+    `;
+  }).join("");
+  suggestionList.classList.add("is-open");
+  input.setAttribute("aria-expanded", "true");
+}
+
+function handleSuggestionImageError(event) {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement) || !image.closest(".suggestion-thumb")) return;
+
+  const candidates = String(image.dataset.candidates || "").split("|").filter(Boolean);
+  const nextIndex = Number(image.dataset.index || 0) + 1;
+  if (nextIndex < candidates.length) {
+    image.dataset.index = String(nextIndex);
+    image.src = candidates[nextIndex];
+    return;
+  }
+
+  const thumb = image.closest(".suggestion-thumb");
+  thumb.classList.add("is-fallback");
+  thumb.textContent = "ID";
 }
 
 function updateActiveSuggestion(nextIndex) {
@@ -944,6 +1003,7 @@ suggestionList.addEventListener("mousemove", (event) => {
   if (!item) return;
   updateActiveSuggestion(Number(item.dataset.index));
 });
+suggestionList.addEventListener("error", handleSuggestionImageError, true);
 
 const initialAppId = normalizeAppId(new URLSearchParams(window.location.search).get("appid"));
 if (/^\d+$/.test(initialAppId)) {
@@ -962,5 +1022,6 @@ window.CharonGen = {
   fetchStoreGameDetails,
   fetchBackupGameDetails,
   suggestionUrl,
-  parseSteamSuggestions
+  parseSteamSuggestions,
+  steamSuggestionImageCandidates
 };
