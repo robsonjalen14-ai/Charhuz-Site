@@ -14,8 +14,11 @@
   --purple: #8b5cf6;
   --magenta: #ff4fd8;
   --discord: #5865f2;
-  --shadow: 0 24px 90px rgba(0, 0, 0, 0.46);
-  --glow: 0 0 34px rgba(5, 255, 247, 0.18), 0 0 70px rgba(139, 92, 246, 0.16);
+  --shadow: 0 28px 95px rgba(0, 0, 0, 0.52);
+  --shadow-soft: 0 16px 42px rgba(0, 0, 0, 0.3);
+  --glow-sm: 0 0 18px rgba(5, 255, 247, 0.12);
+  --glow: 0 0 34px rgba(5, 255, 247, 0.2), 0 0 78px rgba(139, 92, 246, 0.18);
+  --glow-strong: 0 0 34px rgba(5, 255, 247, 0.34), 0 0 98px rgba(139, 92, 246, 0.28);
   --radius: 24px;
   --radius-sm: 16px;
   --max: 1180px;
@@ -72,10 +75,23 @@ img {
   pointer-events: none;
   transform: translate3d(0, 0, 0);
   background:
-    radial-gradient(circle at 20% 10%, rgba(5, 255, 247, 0.15), transparent 28%),
-    radial-gradient(circle at 78% 18%, rgba(139, 92, 246, 0.2), transparent 30%),
+    radial-gradient(circle at 20% 10%, rgba(5, 255, 247, 0.18), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(139, 92, 246, 0.24), transparent 30%),
     radial-gradient(circle at 50% 85%, rgba(255, 79, 216, 0.11), transparent 34%),
     linear-gradient(145deg, #070708 0%, #11131a 48%, #08080b 100%);
+}
+
+.site-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.28;
+  background:
+    radial-gradient(circle at 22% 34%, rgba(255, 255, 255, 0.18) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 74% 62%, rgba(5, 255, 247, 0.2) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 48% 18%, rgba(139, 92, 246, 0.22) 0 1px, transparent 1.5px);
+  background-size: 120px 120px, 170px 170px, 220px 220px;
+  animation: particle-drift 18s linear infinite;
 }
 
 .mesh {
@@ -124,14 +140,14 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border: 1px solid var(--border);
-  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 20px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 42%),
-    rgba(8, 8, 10, 0.76);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.32), 0 0 42px rgba(5, 255, 247, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+    rgba(10, 10, 20, 0.62);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.36), 0 0 42px rgba(5, 255, 247, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
@@ -169,16 +185,31 @@ img {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  padding: 10px 15px;
+  padding: 10px 16px;
   color: var(--soft);
   text-decoration: none;
-  border-radius: 999px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--nav-accent, var(--cyan)) 18%, transparent), rgba(255, 255, 255, 0.035)),
     rgba(255, 255, 255, 0.035);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 20px color-mix(in srgb, var(--nav-accent, var(--cyan)) 14%, transparent);
   transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease;
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 999px;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, var(--nav-accent, var(--cyan)), transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--nav-accent, var(--cyan)) 44%, transparent);
+  transform: scaleX(0.28);
+  transition: opacity 180ms ease, transform 220ms ease;
 }
 
 .nav-links a:nth-child(1) {
@@ -221,6 +252,13 @@ img {
   opacity: 1;
 }
 
+.nav-links a:hover::after,
+.nav-links a:focus-visible::after,
+.nav-links a[aria-current="page"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
 .section-shell {
   width: min(var(--max), calc(100% - 32px));
   margin: 0 auto;
@@ -228,13 +266,26 @@ img {
 }
 
 .glass-panel {
-  border: 1px solid var(--border);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.085);
   border-radius: var(--radius);
-  background: linear-gradient(145deg, rgba(20, 21, 28, 0.78), rgba(12, 12, 16, 0.68));
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.052), transparent 32%),
+    linear-gradient(145deg, rgba(20, 21, 28, 0.78), rgba(12, 12, 16, 0.68));
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   backface-visibility: hidden;
+}
+
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 34%);
+  opacity: 0.65;
 }
 
 .hero {
@@ -270,11 +321,13 @@ p {
   font-size: clamp(4.4rem, 13vw, 9.5rem);
   line-height: 0.86;
   letter-spacing: 0;
-  background: linear-gradient(90deg, #f5f5f5 0%, var(--cyan) 36%, var(--purple) 72%, #fff 100%);
+  background: linear-gradient(105deg, #f5f5f5 0%, var(--cyan) 26%, var(--purple) 55%, var(--magenta) 76%, #fff 100%);
+  background-size: 180% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 0 28px rgba(5, 255, 247, 0.22));
+  animation: title-shimmer 8s ease-in-out infinite;
 }
 
 .hero-subtitle {
@@ -285,23 +338,41 @@ p {
 }
 
 .btn {
-  min-height: 52px;
+  min-height: 56px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 15px 24px;
+  padding: 0 32px;
   color: var(--text);
   font: inherit;
   font-weight: 700;
   text-decoration: none;
-  border: 0;
-  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 18px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease, filter 220ms ease;
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease, filter 220ms ease, border-color 220ms ease;
   backface-visibility: hidden;
+}
+
+.btn svg,
+.btn span,
+.icon-chip svg {
+  position: relative;
+  z-index: 1;
+}
+
+.btn svg,
+.icon-chip svg {
+  width: 1.15em;
+  height: 1.15em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .btn::before {
@@ -313,10 +384,25 @@ p {
   transition: transform 680ms ease;
 }
 
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: calc(18px - 1px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 38%);
+  opacity: 0.75;
+}
+
 .btn:hover,
 .btn:focus-visible {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.03);
   outline: none;
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.985);
+  filter: brightness(0.92);
 }
 
 .btn:hover::before,
@@ -326,8 +412,41 @@ p {
 
 .btn-primary {
   color: #050505;
-  background: linear-gradient(90deg, var(--cyan), var(--purple));
-  box-shadow: 0 0 24px rgba(5, 255, 247, 0.25), 0 0 62px rgba(139, 92, 246, 0.22);
+  border-color: rgba(5, 255, 247, 0.42);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.72), transparent 28%),
+    linear-gradient(100deg, var(--cyan), #7cfbff, var(--purple), var(--magenta));
+  background-size: 100% 100%, 220% 100%;
+  box-shadow: var(--glow-strong), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  animation: gradient-shift 9s ease-in-out infinite;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  box-shadow: 0 0 42px rgba(5, 255, 247, 0.42), 0 0 118px rgba(139, 92, 246, 0.34);
+}
+
+.btn-secondary {
+  color: var(--text);
+  border-color: rgba(5, 255, 247, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(5, 255, 247, 0.035);
+  box-shadow: var(--shadow-soft), var(--glow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+  border-color: rgba(5, 255, 247, 0.42);
+  box-shadow: var(--shadow-soft), 0 0 34px rgba(5, 255, 247, 0.18);
+}
+
+.btn-ghost {
+  min-height: 48px;
+  color: var(--soft);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .hero-download {
@@ -336,6 +455,7 @@ p {
 }
 
 .btn-discord {
+  border-color: rgba(88, 101, 242, 0.42);
   background: linear-gradient(90deg, var(--discord), #a855f7);
   box-shadow: 0 0 28px rgba(88, 101, 242, 0.3), 0 0 66px rgba(168, 85, 247, 0.2);
 }
@@ -395,16 +515,34 @@ p {
 }
 
 .feature-card {
+  position: relative;
+  overflow: hidden;
   min-height: 232px;
   padding: 26px;
   transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 220ms ease, box-shadow 220ms ease;
   backface-visibility: hidden;
 }
 
+.feature-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 16px 0;
+  height: 2px;
+  opacity: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--purple), transparent);
+  box-shadow: var(--glow-sm);
+  transition: opacity 220ms ease;
+}
+
 .feature-card:hover {
-  transform: translateY(-4px);
+  transform: perspective(900px) translateY(-6px) rotateX(1deg);
   border-color: var(--border-strong);
   box-shadow: var(--shadow), var(--glow);
+}
+
+.feature-card:hover::after {
+  opacity: 1;
 }
 
 .icon-chip {
@@ -415,8 +553,11 @@ p {
   place-items: center;
   border-radius: 14px;
   color: var(--cyan);
-  background: rgba(5, 255, 247, 0.1);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.16), transparent 48%),
+    rgba(5, 255, 247, 0.1);
   border: 1px solid rgba(5, 255, 247, 0.22);
+  box-shadow: var(--glow-sm);
 }
 
 .feature-card h3,
@@ -615,6 +756,36 @@ p {
   }
   50% {
     transform: translate3d(30px, -24px, 0) scale(1.06);
+  }
+}
+
+@keyframes particle-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-120px, 80px, 0);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0 0, 0% 50%;
+  }
+
+  50% {
+    background-position: 0 0, 100% 50%;
+  }
+}
+
+@keyframes title-shimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
   }
 }
 

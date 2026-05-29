@@ -138,7 +138,8 @@ function setStatus(message, percent = 0, type = "info") {
 
 function setBusy(isBusy) {
   button.disabled = isBusy;
-  button.textContent = isBusy ? "Working..." : "Generate ZIP";
+  button.classList.toggle("is-loading", isBusy);
+  button.querySelector("span").textContent = isBusy ? "Working..." : "Generate ZIP";
   input.disabled = isBusy;
 }
 
@@ -194,11 +195,15 @@ function parseSteamSuggestions(html, term) {
       anchor.querySelector(".match_name")?.textContent?.trim() ||
       anchor.textContent?.replace(/\s+/g, " ").trim();
     if (!name) return;
+    const image = anchor.querySelector(".match_img img")?.getAttribute("src") || "";
+    const price = anchor.querySelector(".match_price")?.textContent?.replace(/\s+/g, " ").trim() || "";
 
     seen.add(appId);
     suggestions.push({
       name,
       appId,
+      image,
+      price,
       startsWithTerm: normalizedTerm ? name.toLowerCase().startsWith(normalizedTerm) : false
     });
   });
@@ -225,7 +230,13 @@ function renderSuggestions(suggestions) {
 
   suggestionList.innerHTML = suggestions.map((item, index) => `
     <button class="suggestion-item ${index === activeSuggestionIndex ? "is-active" : ""}" type="button" role="option" aria-selected="${index === activeSuggestionIndex ? "true" : "false"}" data-index="${index}">
-      <span class="suggestion-name">${escapeHtml(item.name)}</span>
+      <span class="suggestion-thumb">
+        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : ""}
+      </span>
+      <span class="suggestion-copy">
+        <span class="suggestion-name">${escapeHtml(item.name)}</span>
+        <span class="suggestion-meta">Steam App ID: ${escapeHtml(item.appId)}${item.price ? ` · ${escapeHtml(item.price)}` : ""}</span>
+      </span>
       <span class="suggestion-appid">${escapeHtml(item.appId)}</span>
     </button>
   `).join("");
@@ -840,7 +851,7 @@ function showDownload(result) {
   downloadTitle.textContent = "Download ZIP";
   downloadDescription.textContent = result.description;
   downloadLink.href = result.url;
-  downloadLink.textContent = "Download ZIP";
+  downloadLink.querySelector("span").textContent = "Download ZIP";
 
   if (result.downloadAttribute) {
     downloadLink.setAttribute("download", result.downloadAttribute);

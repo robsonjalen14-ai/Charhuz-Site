@@ -36,8 +36,8 @@
   <link rel="preconnect" href="https://store.steampowered.com">
   <link rel="preconnect" href="https://cdn.cloudflare.steamstatic.com">
   <link rel="preconnect" href="https://raw.githubusercontent.com">
-  <link rel="stylesheet" href="style.css?v=20260526a">
-  <link rel="stylesheet" href="charon-gen.css?v=20260529a">
+  <link rel="stylesheet" href="style.css?v=20260529b">
+  <link rel="stylesheet" href="charon-gen.css?v=20260529b">
 </head>
 <body>
   <div class="site-bg" aria-hidden="true">
@@ -71,7 +71,10 @@
           <strong>Need to request a manifest or report a broken file?</strong>
           <p>Join the Charon community for manifest requests, fixes, support, and updates.</p>
         </div>
-        <a class="btn btn-support" href="index.html#discord">Open Discord Section</a>
+        <a class="btn btn-secondary btn-support" href="index.html#discord">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 15s1.5 1 4 1 4-1 4-1"/><path d="M9 10h.01M15 10h.01"/><path d="M7.5 18c-1.5-.5-2.5-1.5-2.5-1.5S4 12 5.5 7.5C7.3 6.2 9 5.8 9 5.8l.7 1.2A12 12 0 0 1 12 6.8a12 12 0 0 1 2.3.2l.7-1.2s1.7.4 3.5 1.7C20 12 19 16.5 19 16.5S18 17.5 16.5 18"/></svg>
+          Open Discord Section
+        </a>
       </section>
 
       <form class="generator-form glass-panel" id="generatorForm">
@@ -82,7 +85,10 @@
         <div class="input-wrap">
           <div class="input-row">
             <input id="appid" name="appid" type="search" autocomplete="off" placeholder="Search game name or enter App ID" aria-describedby="statusText" aria-controls="suggestionList" aria-expanded="false" required>
-            <button class="btn btn-primary" id="generateBtn" type="submit">Generate ZIP</button>
+            <button class="btn btn-primary btn-generate" id="generateBtn" type="submit">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="m10 14 2 2 4-5"/></svg>
+              <span>Generate ZIP</span>
+            </button>
           </div>
           <div class="suggestion-list" id="suggestionList" role="listbox" aria-label="Steam game suggestions"></div>
         </div>
@@ -112,7 +118,10 @@
           <h2 id="downloadTitle">Download ZIP</h2>
           <p id="downloadDescription">Your package is ready.</p>
         </div>
-        <a class="btn btn-download" id="downloadLink" href="#" download>Download ZIP</a>
+        <a class="btn btn-download" id="downloadLink" href="#" download>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+          <span>Download ZIP</span>
+        </a>
       </section>
     </section>
   </main>
@@ -138,6 +147,6 @@
       }
     }
   </script>
-  <script src="charon-gen.js?v=20260526a" defer></script>
+  <script src="charon-gen.js?v=20260529b" defer></script>
 </body>
 </html>
