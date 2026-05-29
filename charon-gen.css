@@ -31,6 +31,7 @@
 }
 
 .generator-layout > * {
+  position: relative;
   min-width: 0;
 }
 
@@ -76,10 +77,18 @@
 }
 
 .generator-form {
+  z-index: 40;
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;
   align-items: end;
   gap: 22px;
+  overflow: visible;
+}
+
+.status-panel,
+.game-details,
+.download-panel {
+  z-index: 1;
 }
 
 .generator-form label {
@@ -103,6 +112,7 @@
 
 .input-wrap {
   position: relative;
+  z-index: 50;
   min-width: 0;
 }
 
@@ -124,7 +134,7 @@
 
 .suggestion-list {
   position: absolute;
-  z-index: 20;
+  z-index: 999;
   top: calc(100% + 10px);
   left: 0;
   right: 0;
