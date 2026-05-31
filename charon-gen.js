@@ -22,6 +22,23 @@ const STEAM_SUGGEST_URL =
 
 const STEAMSPY_DETAILS_URL =
   "https://steamspy.com/api.php?request=appdetails&appid=";
+const STEAMCMD_INFO_URL = "https://api.steamcmd.net/v1/info/";
+
+const MANIFEST_SOURCES = [
+  {
+    id: "manifest-vault",
+    label: "Manifest Vault",
+    base: "https://raw.githubusercontent.com/BlissBlender/ManifestVault/main/"
+  },
+  {
+    id: "external-vault",
+    label: "External Vault",
+    base: "https://raw.githubusercontent.com/qwe213312/k25FCdfEOoEJ42S6/main/"
+  }
+];
+
+const DEPOT_ADDAPPID_RE = /addappid\s*\(\s*(\d+)\s*,\s*\d+\s*,\s*["'][a-fA-F0-9]+["']/gi;
+const DIRECT_MANIFEST_FILE_RE = /\b(\d{3,})_(\d{3,})\.manifest\b/gi;
 
 const GAME_DETAILS_CACHE_PREFIX = "charon.game.";
 const GAME_DETAILS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -129,6 +146,7 @@ let suggestionRequestId = 0;
 let suggestionTimer = 0;
 let activeSuggestionIndex = -1;
 let currentSuggestions = [];
+const suggestionCache = new Map();
 
 function setStatus(message, percent = 0, type = "info") {
   statusText.textContent = message;
@@ -229,32 +247,9 @@ function steamSuggestionImageCandidates(appId, image = "") {
 function hideSuggestions() {
   suggestionList.classList.remove("is-open");
   suggestionList.innerHTML = "";
+  currentSuggestions = [];
   input.setAttribute("aria-expanded", "false");
   activeSuggestionIndex = -1;
-}
-
-function renderSuggestions(suggestions) {
-  currentSuggestions = suggestions;
-  activeSuggestionIndex = suggestions.length ? 0 : -1;
-  if (!suggestions.length) {
-    hideSuggestions();
-    return;
-  }
-
-  suggestionList.innerHTML = suggestions.map((item, index) => `
-    <button class="suggestion-item ${index === activeSuggestionIndex ? "is-active" : ""}" type="button" role="option" aria-selected="${index === activeSuggestionIndex ? "true" : "false"}" data-index="${index}">
-      <span class="suggestion-thumb">
-        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="" loading="lazy" decoding="async">` : ""}
-      </span>
-      <span class="suggestion-copy">
-        <span class="suggestion-name">${escapeHtml(item.name)}</span>
-        <span class="suggestion-meta">Steam App ID: ${escapeHtml(item.appId)}${item.price ? ` · ${escapeHtml(item.price)}` : ""}</span>
-      </span>
-      <span class="suggestion-appid">${escapeHtml(item.appId)}</span>
-    </button>
-  `).join("");
-  suggestionList.classList.add("is-open");
-  input.setAttribute("aria-expanded", "true");
 }
 
 function renderSuggestions(suggestions) {
@@ -324,13 +319,16 @@ function chooseSuggestion(index = activeSuggestionIndex) {
 }
 
 async function loadSuggestions(term, requestId) {
+  const cacheKey = term.toLowerCase();
   try {
-    const html = await fetchTextWithFallback(suggestionUrl(term), {
-      timeout: 7000,
+    const html = await fetchTextFirst(suggestionUrl(term), {
+      timeout: 4500,
       candidates: STEAM_SUGGEST_PROXIES
     });
     if (requestId !== suggestionRequestId) return;
-    renderSuggestions(parseSteamSuggestions(html, term));
+    const suggestions = parseSteamSuggestions(html, term);
+    suggestionCache.set(cacheKey, suggestions);
+    renderSuggestions(suggestions);
   } catch {
     if (requestId === suggestionRequestId) hideSuggestions();
   }
@@ -339,16 +337,20 @@ async function loadSuggestions(term, requestId) {
 function scheduleSuggestions() {
   window.clearTimeout(suggestionTimer);
   const term = input.value.trim();
+  const requestId = ++suggestionRequestId;
   if (!term || /^\d+$/.test(term)) {
-    suggestionRequestId += 1;
     hideSuggestions();
     return;
   }
 
+  const cacheKey = term.toLowerCase();
+  if (suggestionCache.has(cacheKey)) {
+    renderSuggestions(suggestionCache.get(cacheKey));
+  }
+
   suggestionTimer = window.setTimeout(() => {
-    const requestId = ++suggestionRequestId;
     loadSuggestions(term, requestId);
-  }, 220);
+  }, suggestionCache.has(cacheKey) ? 80 : 120);
 }
 
 function encodeFileName(fileName) {
@@ -449,10 +451,26 @@ async function fetchTextWithFallback(url, options = {}) {
   throw lastError || new Error("Suggestion request failed.");
 }
 
+async function fetchTextFirst(url, options = {}) {
+  const timeout = options.timeout || 6000;
+  const candidates = options.candidates || STEAM_SUGGEST_PROXIES;
+  const requests = candidates.map(async (candidateConfig) => {
+    const candidate = candidateConfig.makeUrl(url);
+    const response = await fetchWithTimeout(candidate, {
+      timeout,
+      headers: { Accept: "text/html, text/plain" }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return candidateConfig.parse(response);
+  });
+
+  return Promise.any(requests);
+}
+
 async function fetchBytesFile(url) {
   const response = await fetchWithTimeout(url, {
-    timeout: 10000,
-    headers: { Accept: "text/plain, application/octet-stream" }
+    timeout: 15000,
+    headers: { Accept: "application/zip, text/plain, application/octet-stream" }
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return new Uint8Array(await response.arrayBuffer());
@@ -571,8 +589,15 @@ function createZipBlob(files) {
   const centralParts = [];
   const { dosTime, dosDate } = dosDateTime();
   let localOffset = 0;
+  let entryCount = 0;
+  const seenNames = new Set();
 
   for (const file of files) {
+    if (!file?.name) continue;
+    const key = file.name.toLowerCase();
+    if (seenNames.has(key)) continue;
+    seenNames.add(key);
+    entryCount += 1;
     const fileNameBytes = ZIP_ENCODER.encode(file.name);
     const dataBytes = file.bytes;
     const checksum = crc32(dataBytes);
@@ -624,8 +649,8 @@ function createZipBlob(files) {
   end.u32(0x06054b50);
   end.u16(0);
   end.u16(0);
-  end.u16(files.length);
-  end.u16(files.length);
+  end.u16(entryCount);
+  end.u16(entryCount);
   end.u32(centralSize);
   end.u32(centralOffset);
   end.u16(0);
@@ -633,19 +658,245 @@ function createZipBlob(files) {
   return new Blob([...parts, ...centralParts, end.bytes], { type: "application/zip" });
 }
 
+function zipRootName(name) {
+  return String(name || "")
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter(Boolean)
+    .pop() || "";
+}
+
+function readZipEntries(zipBytes) {
+  if (!window.fflate?.unzipSync) {
+    throw new Error("ZIP reader is unavailable.");
+  }
+
+  const unzipped = window.fflate.unzipSync(zipBytes);
+  return Object.entries(unzipped)
+    .map(([name, bytes]) => ({
+      originalName: name,
+      name: zipRootName(name),
+      bytes
+    }))
+    .filter((entry) => entry.name && !entry.originalName.endsWith("/"));
+}
+
+function createFlatZipBlobFromEntries(entries, manifests = []) {
+  const files = [];
+  const seen = new Set();
+
+  entries.forEach((entry) => {
+    const name = zipRootName(entry.name || entry.originalName);
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    files.push({ name, bytes: entry.bytes });
+  });
+
+  manifests.forEach((manifest) => {
+    const name = zipRootName(manifest?.fileName);
+    if (!name || !/\.manifest$/i.test(name)) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    files.push({ name, bytes: manifest.bytes });
+  });
+
+  return createZipBlob(files);
+}
+
+function extractDepotIdsFromLua(luaText) {
+  const depots = new Set();
+  const content = String(luaText || "");
+  for (const match of content.matchAll(DEPOT_ADDAPPID_RE)) {
+    depots.add(match[1]);
+  }
+  return [...depots];
+}
+
+function extractDirectManifestFileNames(luaText) {
+  const files = new Set();
+  const content = String(luaText || "");
+  for (const match of content.matchAll(DIRECT_MANIFEST_FILE_RE)) {
+    files.add(`${match[1]}_${match[2]}.manifest`);
+  }
+  return [...files];
+}
+
+async function fetchSteamCmdAppInfo(appId) {
+  try {
+    const data = await fetchJsonWithFallback(`${STEAMCMD_INFO_URL}${appId}`, {
+      timeout: 9000,
+      candidates: CORS_JSON_PROXIES
+    });
+    return data?.status === "success" ? data : null;
+  } catch (error) {
+    console.debug(`SteamCMD app info unavailable for ${appId}`, error);
+    return null;
+  }
+}
+
+function manifestFileNamesFromAppInfo(appInfo, appId, depotIds) {
+  const files = new Set();
+  const depots = appInfo?.data?.[appId]?.depots;
+  if (!depots || typeof depots !== "object") return [];
+
+  depotIds.forEach((depotId) => {
+    const manifestId = depots?.[depotId]?.manifests?.public?.gid;
+    if (manifestId) files.add(`${depotId}_${manifestId}.manifest`);
+  });
+
+  return [...files];
+}
+
+async function requiredManifestFileNamesForLuaEntries(appId, luaEntries) {
+  const requiredFiles = new Set();
+  const depotIds = new Set();
+
+  for (const luaEntry of luaEntries) {
+    try {
+      const luaText = new TextDecoder().decode(luaEntry.bytes);
+      extractDirectManifestFileNames(luaText).forEach((fileName) => requiredFiles.add(fileName));
+      extractDepotIdsFromLua(luaText).forEach((depotId) => depotIds.add(depotId));
+    } catch (error) {
+      console.debug(`Lua parsing skipped for ${luaEntry.name || appId}`, error);
+    }
+  }
+
+  if (depotIds.size) {
+    const appInfo = await fetchSteamCmdAppInfo(appId);
+    manifestFileNamesFromAppInfo(appInfo, appId, [...depotIds]).forEach((fileName) => requiredFiles.add(fileName));
+  }
+
+  return [...requiredFiles];
+}
+
+async function findManifestInSources(fileName, cache) {
+  if (cache.has(fileName)) return cache.get(fileName);
+
+  for (const source of MANIFEST_SOURCES) {
+    const url = databaseUrl(source.base, fileName);
+    try {
+      console.debug(`Searching ${source.label}: ${url}`);
+      const bytes = await fetchBytesFile(url);
+      if (!bytes.length) throw new Error("Empty manifest file");
+      const result = { fileName, bytes, source: source.label, url };
+      cache.set(fileName, result);
+      return result;
+    } catch (error) {
+      console.debug(`${source.label} missing ${fileName}`, error);
+    }
+  }
+
+  console.debug(`Manifest skipped because it was not found: ${fileName}`);
+  cache.set(fileName, null);
+  return null;
+}
+
+async function downloadMissingManifests(fileNames, appId) {
+  if (!fileNames.length) return [];
+  const cache = new Map();
+  const manifests = [];
+  const added = new Set();
+
+  for (const fileName of fileNames) {
+    const found = await findManifestInSources(fileName, cache);
+    if (!found || added.has(found.fileName.toLowerCase())) continue;
+    added.add(found.fileName.toLowerCase());
+    manifests.push(found);
+  }
+
+  console.debug(`AppID ${appId}: added ${manifests.length}/${fileNames.length} optional manifest files.`);
+  return manifests;
+}
+
+function summarizeManifestSources(manifests) {
+  return [...new Set(manifests.map((manifest) => manifest.source).filter(Boolean))].join(" + ");
+}
+
+async function collectRequiredManifests(appId, luaBytes) {
+  try {
+    const requiredFiles = await requiredManifestFileNamesForLuaEntries(appId, [{ name: `${appId}.lua`, bytes: luaBytes }]);
+    return downloadMissingManifests(requiredFiles, appId);
+  } catch (error) {
+    console.debug(`Manifest enrichment skipped for ${appId}`, error);
+    return [];
+  }
+}
+
+async function enrichZipBytes(appId, zipBytes) {
+  try {
+    const entries = readZipEntries(zipBytes);
+    const luaEntries = entries.filter((entry) => /\.lua$/i.test(entry.name));
+    if (!luaEntries.length) {
+      return { blob: new Blob([zipBytes], { type: "application/zip" }), manifestSource: "" };
+    }
+
+    const requiredFiles = await requiredManifestFileNamesForLuaEntries(appId, luaEntries);
+    const existingManifests = new Set(
+      entries
+        .filter((entry) => /\.manifest$/i.test(entry.name))
+        .map((entry) => entry.name.toLowerCase())
+    );
+    const missingFiles = requiredFiles.filter((fileName) => !existingManifests.has(fileName.toLowerCase()));
+    const manifests = await downloadMissingManifests(missingFiles, appId);
+
+    return {
+      blob: createFlatZipBlobFromEntries(entries, manifests),
+      manifestSource: summarizeManifestSources(manifests)
+    };
+  } catch (error) {
+    console.debug(`ZIP enrichment skipped for ${appId}`, error);
+    return { blob: new Blob([zipBytes], { type: "application/zip" }), manifestSource: "" };
+  }
+}
+
 async function generateLuaZip(appId, luaUrl) {
   const luaBytes = await fetchBytesFile(luaUrl);
-  const blob = createZipBlob([{ name: `${appId}.lua`, bytes: luaBytes }]);
+  const manifests = await collectRequiredManifests(appId, luaBytes);
+  const blob = createFlatZipBlobFromEntries([{ name: `${appId}.lua`, bytes: luaBytes }], manifests);
   currentBlobUrl = URL.createObjectURL(blob);
 
   return {
     kind: "generated-lua",
     source: "Used Charon Repo",
+    manifestSource: summarizeManifestSources(manifests),
     url: currentBlobUrl,
     fileName: `${appId}.zip`,
     downloadAttribute: `${appId}.zip`,
     description: `${appId}.lua was found in Charon Repo and packed into a ZIP.`
   };
+}
+
+async function generateDatabaseZip(appId, zipUrl, fileName, description) {
+  try {
+    const zipBytes = await fetchBytesFile(zipUrl);
+    const enriched = await enrichZipBytes(appId, zipBytes);
+    currentBlobUrl = URL.createObjectURL(enriched.blob);
+
+    return {
+      kind: "database-zip",
+      source: "Used Charon Repo",
+      manifestSource: enriched.manifestSource,
+      url: currentBlobUrl,
+      fileName,
+      downloadAttribute: fileName.endsWith(".zip") ? fileName : `${appId}.zip`,
+      description: enriched.manifestSource
+        ? `${description} Missing manifest files were added from ${enriched.manifestSource}.`
+        : description
+    };
+  } catch (error) {
+    console.debug(`Database ZIP enrichment failed for ${appId}`, error);
+    return {
+      kind: "database-zip",
+      source: "Used Charon Repo",
+      manifestSource: "",
+      url: zipUrl,
+      fileName,
+      description
+    };
+  }
 }
 
 async function resolveDatabase(appId, database, progressStart) {
@@ -668,12 +919,8 @@ async function resolveDatabase(appId, database, progressStart) {
   const directZipUrl = databaseUrl(base, `${appId}.zip`);
   if (await resourceExists(directZipUrl)) {
     return {
-      kind: "direct-zip",
-      source: "Used Charon Repo",
+      ...(await generateDatabaseZip(appId, directZipUrl, `${appId}.zip`, `${appId}.zip was found in Charon Repo.`)),
       database: "Charon Repo",
-      url: directZipUrl,
-      fileName: `${appId}.zip`,
-      description: `${appId}.zip was found in Charon Repo.`
     };
   }
 
@@ -687,12 +934,8 @@ async function resolveDatabase(appId, database, progressStart) {
 
   if (mapped) {
     return {
-      kind: "indexed-zip",
-      source: "Used Charon Repo",
+      ...(await generateDatabaseZip(appId, mapped.url, mapped.fileName, `${mapped.fileName} was found in Charon Repo.`)),
       database: "Charon Repo",
-      url: mapped.url,
-      fileName: mapped.fileName,
-      description: `${mapped.fileName} was found in Charon Repo.`
     };
   }
 
@@ -906,7 +1149,9 @@ async function loadGameDetails(appId, requestId) {
 }
 
 function showDownload(result) {
-  downloadSource.textContent = result.source;
+  downloadSource.textContent = result.manifestSource
+    ? `${result.source} · ${result.manifestSource}`
+    : result.source;
   downloadTitle.textContent = "Download ZIP";
   downloadDescription.textContent = result.description;
   downloadLink.href = result.url;
@@ -1018,6 +1263,9 @@ window.CharonGen = {
   getMappedZip,
   resourceExists,
   generateLuaZip,
+  generateDatabaseZip,
+  enrichZipBytes,
+  readZipEntries,
   loadGameDetails,
   fetchStoreGameDetails,
   fetchBackupGameDetails,
