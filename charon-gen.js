@@ -13,7 +13,7 @@ const DATABASES = [
 
 const GAMEGEN_API =
   "https://gamegen.lol/api/mg_cca51ec305a5494a946454fcc21cf1c3/generate/";
-const BACKFILL_ENDPOINT = "/api/backfill";
+const BACKFILL_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/backfill";
 
 const STORE_DETAILS_URL =
   "https://store.steampowered.com/api/appdetails?appids=";
