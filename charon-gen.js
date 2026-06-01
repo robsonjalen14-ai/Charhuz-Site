@@ -234,26 +234,30 @@ function parseSteamSuggestions(html, term) {
 }
 
 function scheduleBackfill(payload) {
-  if (!payload || !window.location.protocol.startsWith("http")) return;
-  const key = JSON.stringify(payload);
-  if (scheduledBackfills.has(key)) return;
-  scheduledBackfills.add(key);
+  try {
+    if (!payload || !String(window.location?.protocol || "").startsWith("http")) return;
+    const key = JSON.stringify(payload);
+    if (scheduledBackfills.has(key)) return;
+    scheduledBackfills.add(key);
 
-  window.setTimeout(async () => {
-    try {
-      const response = await fetch(BACKFILL_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: key,
-        keepalive: false
-      });
-      if (!response.ok) {
-        console.debug("Charon backfill skipped", await response.text());
+    window.setTimeout(async () => {
+      try {
+        const response = await fetch(BACKFILL_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: key,
+          keepalive: false
+        });
+        if (!response.ok) {
+          console.debug("Charon backfill skipped", await response.text());
+        }
+      } catch (error) {
+        console.debug("Charon backfill endpoint unavailable", error);
       }
-    } catch (error) {
-      console.debug("Charon backfill endpoint unavailable", error);
-    }
-  }, 0);
+    }, 0);
+  } catch (error) {
+    console.debug("Charon backfill scheduling skipped", error);
+  }
 }
 
 function steamSuggestionImageCandidates(appId, image = "") {
