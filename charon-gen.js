@@ -13,6 +13,7 @@ const DATABASES = [
 
 const GAMEGEN_API =
   "https://gamegen.lol/api/mg_cca51ec305a5494a946454fcc21cf1c3/generate/";
+const BACKFILL_ENDPOINT = "/api/backfill";
 
 const STORE_DETAILS_URL =
   "https://store.steampowered.com/api/appdetails?appids=";
@@ -147,6 +148,7 @@ let suggestionTimer = 0;
 let activeSuggestionIndex = -1;
 let currentSuggestions = [];
 const suggestionCache = new Map();
+const scheduledBackfills = new Set();
 
 function setStatus(message, percent = 0, type = "info") {
   statusText.textContent = message;
@@ -229,6 +231,29 @@ function parseSteamSuggestions(html, term) {
   return suggestions
     .sort((left, right) => Number(right.startsWithTerm) - Number(left.startsWithTerm) || left.name.localeCompare(right.name))
     .slice(0, 25);
+}
+
+function scheduleBackfill(payload) {
+  if (!payload || !window.location.protocol.startsWith("http")) return;
+  const key = JSON.stringify(payload);
+  if (scheduledBackfills.has(key)) return;
+  scheduledBackfills.add(key);
+
+  window.setTimeout(async () => {
+    try {
+      const response = await fetch(BACKFILL_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: key,
+        keepalive: false
+      });
+      if (!response.ok) {
+        console.debug("Charon backfill skipped", await response.text());
+      }
+    } catch (error) {
+      console.debug("Charon backfill endpoint unavailable", error);
+    }
+  }, 0);
 }
 
 function steamSuggestionImageCandidates(appId, image = "") {
@@ -782,6 +807,9 @@ async function findManifestInSources(fileName, cache) {
       const bytes = await fetchBytesFile(url);
       if (!bytes.length) throw new Error("Empty manifest file");
       const result = { fileName, bytes, source: source.label, url };
+      if (source.id === "external-vault") {
+        scheduleBackfill({ type: "manifest-vault", fileName });
+      }
       cache.set(fileName, result);
       return result;
     } catch (error) {
@@ -961,6 +989,7 @@ async function resolveExternalApi(appId) {
     database: "External API",
     url: downloadUrl,
     fileName: `${appId}.zip`,
+    backfill: { type: "external-package", appId },
     description: "ZIP package returned by the external API fallback."
   };
 }
@@ -1169,6 +1198,7 @@ function showDownload(result) {
 
   downloadPanel.classList.remove("is-hidden");
   setStatus("ZIP ready.", 100);
+  if (result.backfill) scheduleBackfill(result.backfill);
   downloadLink.focus({ preventScroll: true });
 }
 
@@ -1271,5 +1301,6 @@ window.CharonGen = {
   fetchBackupGameDetails,
   suggestionUrl,
   parseSteamSuggestions,
-  steamSuggestionImageCandidates
+  steamSuggestionImageCandidates,
+  scheduleBackfill
 };
