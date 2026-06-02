@@ -447,23 +447,11 @@ p {
   background: rgba(59, 130, 246, 0.12) !important;
 }
 
-.hero-demo {
-  width: min(900px, 100%);
-  margin: 0 auto;
-  perspective: 1000px;
-}
-
-.browser-frame,
 .screenshot-frame {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: #151515;
-}
-
-.browser-frame {
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.06), 0 0 50px rgba(59, 130, 246, 0.12);
-  transform: rotateX(3deg);
 }
 
 .browser-bar {
@@ -489,22 +477,6 @@ p {
 
 .browser-bar span:nth-child(3) {
   background: #28c840;
-}
-
-.demo-reel {
-  display: grid;
-  grid-template-columns: repeat(3, 100%);
-  overflow: hidden;
-}
-
-.demo-reel picture {
-  animation: demo-slide 12s ease-in-out infinite;
-}
-
-.demo-reel img {
-  width: 100%;
-  aspect-ratio: 1365 / 717;
-  object-fit: cover;
 }
 
 .btn {
@@ -801,6 +773,17 @@ p {
   border-color: rgba(126, 184, 247, 0.6);
   transform: translateY(-1px);
   outline: none;
+}
+
+.discord-feature-btn {
+  color: #c7d2fe;
+  border-color: rgba(88, 101, 242, 0.45);
+}
+
+.discord-feature-btn:hover,
+.discord-feature-btn:focus-visible {
+  background: rgba(88, 101, 242, 0.14);
+  border-color: rgba(88, 101, 242, 0.72);
 }
 
 .feature-card h3,
@@ -1137,18 +1120,6 @@ p {
 
   50% {
     background-position: 100% 50%;
-  }
-}
-
-@keyframes demo-slide {
-  0%, 28% {
-    transform: translateX(0);
-  }
-  36%, 64% {
-    transform: translateX(-100%);
-  }
-  72%, 100% {
-    transform: translateX(-200%);
   }
 }
 
