@@ -1,5 +1,5 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   --bg: #080808;
   --bg-2: #111217;
   --panel: rgba(18, 18, 22, 0.72);
@@ -25,6 +25,10 @@
   --radius: 24px;
   --radius-sm: 16px;
   --max: 1180px;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
 }
 
 * {
