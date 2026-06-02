@@ -35,8 +35,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://www.dropbox.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260529c">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260602a">
 </head>
 <body>
   <div class="site-bg" aria-hidden="true">
@@ -50,10 +50,16 @@
       <img src="images/charon-mark-nav.png" alt="" width="42" height="42" decoding="async">
       <img class="brand-logo" src="images/charon-logo-nav.png" alt="Charon" width="158" height="44" decoding="async">
     </a>
-    <nav class="nav-links" aria-label="Primary navigation">
+    <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <nav class="nav-links" id="primary-nav" aria-label="Primary navigation">
       <a href="charon-gen.html">Charon Gen</a>
       <a href="#guide">Guide</a>
       <a href="#discord">Discord Server</a>
+      <a class="nav-download" href="https://www.dropbox.com/scl/fi/oxwr1hcsx0uu6laa6wk9m/Charon.exe?rlkey=wki4gg5u9v0lpsmtjz7ongapj&amp;st=6cywhvt1&amp;dl=1">Download</a>
     </nav>
   </header>
 
@@ -65,10 +71,39 @@
         <p class="hero-subtitle">
           A premium desktop workflow for installing, generating, and managing Steam manifests and Lua files with less friction.
         </p>
-        <a class="btn btn-primary hero-download" href="https://www.dropbox.com/scl/fi/oxwr1hcsx0uu6laa6wk9m/Charon.exe?rlkey=wki4gg5u9v0lpsmtjz7ongapj&amp;st=6cywhvt1&amp;dl=1">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
-          <span>Download Charon</span>
-        </a>
+        <div class="hero-cta-row">
+          <a class="btn btn-primary hero-download" href="https://www.dropbox.com/scl/fi/oxwr1hcsx0uu6laa6wk9m/Charon.exe?rlkey=wki4gg5u9v0lpsmtjz7ongapj&amp;st=6cywhvt1&amp;dl=1">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+            <span>Download Charon</span>
+          </a>
+          <a class="btn btn-secondary" href="https://drive.google.com/file/d/1zFi4BKB8sHG7lF1yZrAUVuvqOsPmZD2d/view?usp=sharing" target="_blank" rel="noopener">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg>
+            <span>Watch Demo</span>
+          </a>
+        </div>
+        <div class="hero-trust">
+          <span>Portable .exe</span>
+          <span>No install needed</span>
+        </div>
+        <div class="hero-demo" aria-label="Charon interface preview">
+          <div class="browser-frame">
+            <div class="browser-bar"><span></span><span></span><span></span></div>
+            <div class="demo-reel">
+              <picture>
+                <source srcset="images/screenshot1.webp" type="image/webp">
+                <img src="images/screenshot1.png" alt="Charon app dashboard preview" width="1365" height="717" decoding="async">
+              </picture>
+              <picture>
+                <source srcset="images/screenshot2.webp" type="image/webp">
+                <img src="images/screenshot2.png" alt="Charon install preview" width="1363" height="720" decoding="async">
+              </picture>
+              <picture>
+                <source srcset="images/screenshot3.webp" type="image/webp">
+                <img src="images/screenshot3.png" alt="Charon settings preview" width="1365" height="721" decoding="async">
+              </picture>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -128,6 +163,16 @@
           <h3>60k+ Games Database</h3>
           <p>Access a large Charon package database designed to find supported games quickly and keep generation smooth.</p>
         </article>
+        <article class="feature-card glass-panel installer-feature">
+          <span class="new-badge">New</span>
+          <span class="icon-chip"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/><path d="M7 7h10"/></svg></span>
+          <h3>Steam Manifest Installer</h3>
+          <p>Download and use this app to inject <code>.manifest</code> files directly into your Steam directory.</p>
+          <a href="https://www.dropbox.com/scl/fi/a5bk24ax0eu8mdgujydmv/CharonManifestInstaller.exe?rlkey=ll5zh0bi7sjn643wbot878tcf&amp;st=6qbaeeq2&amp;dl=1" class="feature-download-btn" download>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            <span>Download Installer</span>
+          </a>
+        </article>
       </div>
     </section>
 
@@ -138,18 +183,27 @@
         <p>Dark, compact, and built around the workflows people repeat most: search, install, track, remove, and restart Steam.</p>
       </div>
       <div class="screens">
-        <picture>
-          <source srcset="images/screenshot1.webp" type="image/webp">
-          <img src="images/screenshot1.png" alt="Charon dashboard screenshot" width="1365" height="717" loading="lazy" decoding="async">
-        </picture>
-        <picture>
-          <source srcset="images/screenshot2.webp" type="image/webp">
-          <img src="images/screenshot2.png" alt="Charon manifest install screenshot" width="1363" height="720" loading="lazy" decoding="async">
-        </picture>
-        <picture>
-          <source srcset="images/screenshot3.webp" type="image/webp">
-          <img src="images/screenshot3.png" alt="Charon settings screenshot" width="1365" height="721" loading="lazy" decoding="async">
-        </picture>
+        <button class="screenshot-frame" type="button" data-lightbox="images/screenshot1.png" aria-label="Open Charon dashboard screenshot">
+          <span class="browser-bar"><span></span><span></span><span></span></span>
+          <picture>
+            <source srcset="images/screenshot1.webp" type="image/webp">
+            <img src="images/screenshot1.png" alt="Charon dashboard screenshot" width="1365" height="717" loading="lazy" decoding="async">
+          </picture>
+        </button>
+        <button class="screenshot-frame" type="button" data-lightbox="images/screenshot2.png" aria-label="Open Charon manifest install screenshot">
+          <span class="browser-bar"><span></span><span></span><span></span></span>
+          <picture>
+            <source srcset="images/screenshot2.webp" type="image/webp">
+            <img src="images/screenshot2.png" alt="Charon manifest install screenshot" width="1363" height="720" loading="lazy" decoding="async">
+          </picture>
+        </button>
+        <button class="screenshot-frame" type="button" data-lightbox="images/screenshot3.png" aria-label="Open Charon settings screenshot">
+          <span class="browser-bar"><span></span><span></span><span></span></span>
+          <picture>
+            <source srcset="images/screenshot3.webp" type="image/webp">
+            <img src="images/screenshot3.png" alt="Charon settings screenshot" width="1365" height="721" loading="lazy" decoding="async">
+          </picture>
+        </button>
       </div>
     </section>
 
@@ -196,6 +250,7 @@
           <p class="eyebrow">Discord</p>
           <h2>Join CHARON - A Community-Driven Discord Server</h2>
           <p class="lead">More than just a server - a place to play, connect, build, and grow.</p>
+          <p class="discord-count" id="discord-count">Checking Discord community activity...</p>
           <p>We are building a community for people who love gaming, meaningful conversations, and innovative projects - all in one place.</p>
         </div>
         <div class="discord-grid">
@@ -235,7 +290,42 @@
         </a>
       </div>
     </section>
+
+    <section class="section-shell faq-section" id="faq" data-reveal>
+      <div class="section-heading">
+        <p class="eyebrow">FAQ</p>
+        <h2>Questions before downloading?</h2>
+        <p>Short answers for the things people usually ask before trying Charon.</p>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item glass-panel">
+          <summary>Is Charon portable?</summary>
+          <p>Yes. Charon is shared as a portable Windows `.exe`, so users can run it without a traditional installer.</p>
+        </details>
+        <details class="faq-item glass-panel">
+          <summary>Where does Charon place Lua and manifest files?</summary>
+          <p>Lua files go into Steam's `config/stplug-in` folder, and `.manifest` files go into Steam's `depotcache` folder.</p>
+        </details>
+        <details class="faq-item glass-panel">
+          <summary>Does it work with every game?</summary>
+          <p>Charon depends on available Lua and manifest packages. If a package is missing or broken, use the Discord community to request or report it.</p>
+        </details>
+        <details class="faq-item glass-panel">
+          <summary>What is the automatic install limit?</summary>
+          <p>The desktop app currently allows 10 automatic manifest installs per 24 hours.</p>
+        </details>
+        <details class="faq-item glass-panel">
+          <summary>Can I install a ZIP manually?</summary>
+          <p>Yes. Download or generate a ZIP, then drag it into the manual import area inside Charon.</p>
+        </details>
+      </div>
+    </section>
   </main>
+
+  <div class="lightbox" id="screenshot-lightbox" aria-hidden="true" role="dialog" aria-label="Screenshot preview">
+    <button class="lightbox-close" type="button" aria-label="Close screenshot preview">×</button>
+    <img src="" alt="">
+  </div>
 
   <footer class="footer">
     <img src="images/charon-mark-nav.png" alt="" width="34" height="34" loading="lazy" decoding="async">
@@ -269,6 +359,6 @@
       "description": "Official website for Charon Manifest Tool and Charon Gen."
     }
   </script>
-  <script src="site.js?v=20260529c" defer></script>
+  <script src="site.js?v=20260602a" defer></script>
 </body>
 </html>
