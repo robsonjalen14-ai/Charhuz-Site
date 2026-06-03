@@ -151,6 +151,13 @@ let currentSuggestions = [];
 const suggestionCache = new Map();
 const scheduledBackfills = new Set();
 
+class NoPackageError extends Error {
+  constructor(appId) {
+    super(`No manifest package found for App ID ${appId}. Join Discord to request it or try again later.`);
+    this.name = "NoPackageError";
+  }
+}
+
 function setStatus(message, percent = 0, type = "info") {
   statusText.textContent = message;
   statusDot.classList.toggle("is-error", type === "error");
@@ -987,9 +994,20 @@ async function resolveDatabase(appId, database, progressStart) {
 
 async function resolveExternalApi(appId) {
   setStatus("Checking external API fallback...", 82);
-  const data = await fetchJsonWithFallback(`${GAMEGEN_API}${appId}`);
+  let data;
+  try {
+    data = await fetchJsonWithFallback(`${GAMEGEN_API}${appId}`);
+  } catch (error) {
+    throw new NoPackageError(appId);
+  }
+
+  const backendMessage = String(data?.error || data?.message || "").trim();
+  if (/vpn[_\s-]*blocked|no\s*files?\s*found|not\s*found|unavailable|missing/i.test(backendMessage)) {
+    throw new NoPackageError(appId);
+  }
+
   if (data?.success === false) {
-    throw new Error(data.error || data.message || "No package is available for this App ID.");
+    throw new NoPackageError(appId);
   }
 
   const downloadUrl =
@@ -999,7 +1017,7 @@ async function resolveExternalApi(appId) {
     data?.download_url;
 
   if (!downloadUrl) {
-    throw new Error(data?.error || data?.message || "Backup source did not return a ZIP URL.");
+    throw new NoPackageError(appId);
   }
 
   return {
