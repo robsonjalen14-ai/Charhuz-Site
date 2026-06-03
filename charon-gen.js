@@ -14,6 +14,7 @@ const DATABASES = [
 const GAMEGEN_API =
   "https://gamegen.lol/api/mg_cca51ec305a5494a946454fcc21cf1c3/generate/";
 const BACKFILL_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/backfill";
+const BACKFILL_HEALTH_ENDPOINT = "https://charon-bot.vyro.workers.dev/health";
 
 const STORE_DETAILS_URL =
   "https://store.steampowered.com/api/appdetails?appids=";
@@ -242,6 +243,16 @@ function scheduleBackfill(payload) {
 
     window.setTimeout(async () => {
       try {
+        const health = await fetch(BACKFILL_HEALTH_ENDPOINT, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          cache: "no-store"
+        });
+        if (!health.ok) {
+          console.debug("Charon backfill health check failed", await health.text());
+          return;
+        }
+
         const response = await fetch(BACKFILL_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
