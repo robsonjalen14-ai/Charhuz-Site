@@ -988,6 +988,10 @@ async function resolveDatabase(appId, database, progressStart) {
 async function resolveExternalApi(appId) {
   setStatus("Checking external API fallback...", 82);
   const data = await fetchJsonWithFallback(`${GAMEGEN_API}${appId}`);
+  if (data?.success === false) {
+    throw new Error(data.error || data.message || "No package is available for this App ID.");
+  }
+
   const downloadUrl =
     data?.data?.manifest?.downloadUrl ||
     data?.manifest?.downloadUrl ||
@@ -995,7 +999,7 @@ async function resolveExternalApi(appId) {
     data?.download_url;
 
   if (!downloadUrl) {
-    throw new Error("Backup source did not return a ZIP URL.");
+    throw new Error(data?.error || data?.message || "Backup source did not return a ZIP URL.");
   }
 
   return {
