@@ -21,6 +21,8 @@ const STORE_DETAILS_URL =
 const STORE_DETAILS_FILTERS = "basic,release_date,publishers";
 const STEAM_SUGGEST_URL =
   "https://store.steampowered.com/search/suggest";
+const STEAM_APP_PAGE_URL =
+  "https://store.steampowered.com/app/";
 
 const STEAMSPY_DETAILS_URL =
   "https://steamspy.com/api.php?request=appdetails&appid=";
@@ -367,17 +369,33 @@ function chooseSuggestion(index = activeSuggestionIndex) {
 
 async function loadSuggestions(term, requestId) {
   const cacheKey = term.toLowerCase();
+  let lastError = null;
+
   try {
-    const html = await fetchTextFirst(suggestionUrl(term), {
-      timeout: 4500,
-      candidates: STEAM_SUGGEST_PROXIES
-    });
-    if (requestId !== suggestionRequestId) return;
-    const suggestions = parseSteamSuggestions(html, term);
-    suggestionCache.set(cacheKey, suggestions);
-    renderSuggestions(suggestions);
+    for (const candidateConfig of STEAM_SUGGEST_PROXIES) {
+      try {
+        const html = await fetchTextWithFallback(suggestionUrl(term), {
+          timeout: 4500,
+          candidates: [candidateConfig]
+        });
+        if (requestId !== suggestionRequestId) return;
+
+        const suggestions = parseSteamSuggestions(html, term);
+        if (!suggestions.length) continue;
+
+        suggestionCache.set(cacheKey, suggestions);
+        renderSuggestions(suggestions);
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    suggestionCache.set(cacheKey, []);
+    hideSuggestions();
   } catch {
     if (requestId === suggestionRequestId) hideSuggestions();
+    if (lastError) console.debug("Steam suggestions failed", lastError);
   }
 }
 
@@ -1087,7 +1105,9 @@ function readCachedGameDetails(appId) {
   try {
     const cached = JSON.parse(localStorage.getItem(cacheKey(appId)) || "null");
     if (!cached || Date.now() - cached.savedAt > GAME_DETAILS_CACHE_TTL) return null;
-    return normalizeGameDetails(appId, cached.game);
+    const game = normalizeGameDetails(appId, cached.game);
+    if (game.name === `Steam App ${appId}` || game.name === `App ID ${appId}`) return null;
+    return game;
   } catch {
     return null;
   }
@@ -1115,9 +1135,17 @@ function renderGameLoading() {
   `;
 }
 
+function renderGameShell(appId) {
+  renderGameDetails(appId, {
+    name: "Loading game...",
+    header_image: steamAsset(appId, "header.jpg"),
+    capsule_image: steamAsset(appId, "capsule_616x353.jpg")
+  });
+}
+
 function renderGameError(appId, message) {
   renderGameDetails(appId, {
-    name: `Steam App ${appId}`,
+    name: `App ID ${appId}`,
     publishers: ["Unknown"],
     release_date: { date: "Unknown" },
     header_image: steamAsset(appId, "header.jpg"),
@@ -1173,6 +1201,28 @@ async function fetchBackupGameDetails(appId) {
   });
 }
 
+async function fetchStorePageGameDetails(appId) {
+  const html = await fetchTextWithFallback(`${STEAM_APP_PAGE_URL}${appId}`, {
+    timeout: 8000,
+    candidates: STEAM_SUGGEST_PROXIES
+  });
+  const parser = new DOMParser();
+  const documentHtml = parser.parseFromString(String(html || ""), "text/html");
+  const name =
+    documentHtml.querySelector("#appHubAppName")?.textContent?.trim() ||
+    documentHtml.querySelector("meta[property='og:title']")?.getAttribute("content")?.trim() ||
+    documentHtml.querySelector("title")?.textContent?.replace(/\s+on Steam\s*$/i, "").trim();
+  if (!name) throw new Error("Steam store page title unavailable.");
+
+  return normalizeGameDetails(appId, {
+    name,
+    publishers: [],
+    release_date: { date: "Unknown" },
+    header_image: documentHtml.querySelector("meta[property='og:image']")?.getAttribute("content") || steamAsset(appId, "header.jpg"),
+    capsule_image: steamAsset(appId, "capsule_616x353.jpg")
+  });
+}
+
 function isActiveRequest(requestId) {
   return requestId === activeRequestId;
 }
@@ -1182,14 +1232,15 @@ async function loadGameDetails(appId, requestId) {
   if (cached) {
     renderGameDetails(appId, cached);
   } else {
-    renderGameLoading();
+    renderGameShell(appId);
   }
 
   const storeDetails = fetchStoreGameDetails(appId);
   const backupDetails = fetchBackupGameDetails(appId);
+  const storePageDetails = fetchStorePageGameDetails(appId);
 
   try {
-    const game = await Promise.any([storeDetails, backupDetails]);
+    const game = await Promise.any([storeDetails, backupDetails, storePageDetails]);
     if (!isActiveRequest(requestId)) return;
     writeCachedGameDetails(appId, game);
     renderGameDetails(appId, game);
