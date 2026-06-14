@@ -15,6 +15,7 @@ const GAMEGEN_API =
   "https://gamegen.lol/api/mg_cca51ec305a5494a946454fcc21cf1c3/generate/";
 const BACKFILL_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/backfill";
 const BACKFILL_HEALTH_ENDPOINT = "https://charon-bot.vyro.workers.dev/health";
+const BOT_STEAM_SUGGEST_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/steam-suggest";
 
 const STORE_DETAILS_URL =
   "https://store.steampowered.com/api/appdetails?appids=";
@@ -330,6 +331,47 @@ function renderSuggestions(suggestions) {
   input.setAttribute("aria-expanded", "true");
 }
 
+function renderSuggestionLoading() {
+  suggestionList.innerHTML = `
+    <div class="suggestion-item suggestion-loading" role="option" aria-selected="false">
+      <span class="suggestion-thumb is-fallback">...</span>
+      <span class="suggestion-copy">
+        <span class="suggestion-name">Searching Steam games...</span>
+        <span class="suggestion-meta">Matching game names and App IDs</span>
+      </span>
+    </div>
+  `;
+  suggestionList.classList.add("is-open");
+  input.setAttribute("aria-expanded", "true");
+}
+
+function normalizeBotSuggestions(items) {
+  return (Array.isArray(items) ? items : [])
+    .map((item) => {
+      const value = String(item.value || "").trim();
+      const label = String(item.name || "").trim();
+      const match = label.match(/\((\d+)\)\s*$/);
+      const appId = value || match?.[1] || "";
+      const name = label.replace(/\s*\(\d+\)\s*$/, "").trim();
+      return appId && name ? { appId, name, image: "", price: "", startsWithTerm: false } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 25);
+}
+
+async function fetchBotSuggestions(term) {
+  const url = new URL(BOT_STEAM_SUGGEST_ENDPOINT);
+  url.searchParams.set("term", term);
+  const response = await fetchWithTimeout(url.toString(), {
+    timeout: 5000,
+    headers: { Accept: "application/json" },
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json();
+  return normalizeBotSuggestions(data.suggestions);
+}
+
 function handleSuggestionImageError(event) {
   const image = event.target;
   if (!(image instanceof HTMLImageElement) || !image.closest(".suggestion-thumb")) return;
@@ -372,6 +414,18 @@ async function loadSuggestions(term, requestId) {
   let lastError = null;
 
   try {
+    try {
+      const suggestions = await fetchBotSuggestions(term);
+      if (requestId !== suggestionRequestId) return;
+      if (suggestions.length) {
+        suggestionCache.set(cacheKey, suggestions);
+        renderSuggestions(suggestions);
+        return;
+      }
+    } catch (error) {
+      lastError = error;
+    }
+
     for (const candidateConfig of STEAM_SUGGEST_PROXIES) {
       try {
         const html = await fetchTextWithFallback(suggestionUrl(term), {
@@ -391,7 +445,6 @@ async function loadSuggestions(term, requestId) {
       }
     }
 
-    suggestionCache.set(cacheKey, []);
     hideSuggestions();
   } catch {
     if (requestId === suggestionRequestId) hideSuggestions();
@@ -411,6 +464,8 @@ function scheduleSuggestions() {
   const cacheKey = term.toLowerCase();
   if (suggestionCache.has(cacheKey)) {
     renderSuggestions(suggestionCache.get(cacheKey));
+  } else if (term.length >= 2) {
+    renderSuggestionLoading();
   }
 
   suggestionTimer = window.setTimeout(() => {

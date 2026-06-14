@@ -195,6 +195,11 @@
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
+.suggestion-loading {
+  pointer-events: none;
+  opacity: 0.78;
+}
+
 .suggestion-item:hover,
 .suggestion-item.is-active {
   border-color: rgba(5, 255, 247, 0.34);
