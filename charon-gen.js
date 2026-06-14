@@ -1128,10 +1128,6 @@ function renderGameError(appId, message) {
 function renderGameDetails(appId, game) {
   const banner = game.header_image || game.capsule_image || steamAsset(appId, "header.jpg");
   const gameName = game.name || `Steam App ${appId}`;
-  const publishers = Array.isArray(game.publishers) && game.publishers.length
-    ? game.publishers.join(", ")
-    : "Unknown";
-  const releaseDate = game.release_date?.date || "Unknown";
 
   gameDetails.classList.remove("is-empty");
   gameDetails.innerHTML = `
@@ -1143,8 +1139,6 @@ function renderGameDetails(appId, game) {
         <h2>${escapeHtml(gameName)}</h2>
         <div class="game-info-row">
           <span>App ID: ${escapeHtml(appId)}</span>
-          <span>Publisher: ${escapeHtml(publishers)}</span>
-          <span>Release: ${escapeHtml(releaseDate)}</span>
         </div>
       </div>
     </article>
