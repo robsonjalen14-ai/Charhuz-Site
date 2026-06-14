@@ -1116,13 +1116,13 @@ function renderGameLoading() {
 }
 
 function renderGameError(appId, message) {
-  gameDetails.classList.remove("is-empty");
-  gameDetails.innerHTML = `
-    <div class="error-card">
-      <h2>Limited Steam details</h2>
-      <p>Charon could not load full Store details for App ID ${escapeHtml(appId)}. ${escapeHtml(message)}</p>
-    </div>
-  `;
+  renderGameDetails(appId, {
+    name: `Steam App ${appId}`,
+    publishers: ["Unknown"],
+    release_date: { date: "Unknown" },
+    header_image: steamAsset(appId, "header.jpg"),
+    capsule_image: steamAsset(appId, "capsule_616x353.jpg")
+  });
 }
 
 function renderGameDetails(appId, game) {
