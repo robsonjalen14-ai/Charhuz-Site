@@ -16,6 +16,7 @@ const GAMEGEN_API =
 const BACKFILL_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/backfill";
 const BACKFILL_HEALTH_ENDPOINT = "https://charon-bot.vyro.workers.dev/health";
 const BOT_STEAM_SUGGEST_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/steam-suggest";
+const BOT_GAME_DETAILS_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/game-details";
 
 const STORE_DETAILS_URL =
   "https://store.steampowered.com/api/appdetails?appids=";
@@ -285,10 +286,7 @@ function steamSuggestionImageCandidates(appId, image = "") {
   const id = String(appId || "").trim();
   return [
     image,
-    id ? steamAsset(id, "capsule_sm_120.jpg") : "",
-    id ? steamAsset(id, "capsule_231x87.jpg") : "",
-    id ? steamAsset(id, "capsule_467x181.jpg") : "",
-    id ? steamAsset(id, "header.jpg") : ""
+    id ? steamAsset(id, "capsule_sm_120.jpg") : ""
   ].map((item) => String(item || "").trim())
     .filter(Boolean)
     .filter((item, index, list) => list.indexOf(item) === index);
@@ -1151,7 +1149,7 @@ function normalizeGameDetails(appId, game) {
       date: releaseDate.date || "Unknown",
       coming_soon: Boolean(releaseDate.coming_soon)
     },
-    header_image: game.header_image || steamAsset(appId, "header.jpg"),
+    header_image: game.header_image || game.banner || steamAsset(appId, "header.jpg"),
     capsule_image: game.capsule_image || steamAsset(appId, "capsule_616x353.jpg")
   };
 }
@@ -1240,6 +1238,24 @@ async function fetchStoreGameDetails(appId) {
   return normalizeGameDetails(appId, entry.data);
 }
 
+async function fetchBotGameDetails(appId) {
+  const url = new URL(BOT_GAME_DETAILS_ENDPOINT);
+  url.searchParams.set("appid", appId);
+  const response = await fetchWithTimeout(url.toString(), {
+    timeout: 5000,
+    headers: { Accept: "application/json" },
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json();
+  if (!data?.ok || !data.game?.name) throw new Error("Bot game details unavailable.");
+  const game = normalizeGameDetails(appId, data.game);
+  if (game.name === `Steam App ${appId}` || game.name === `App ID ${appId}`) {
+    throw new Error("Bot returned fallback game details.");
+  }
+  return game;
+}
+
 async function fetchBackupGameDetails(appId) {
   const data = await fetchJsonFirst(`${STEAMSPY_DETAILS_URL}${appId}`, {
     timeout: 12000,
@@ -1291,11 +1307,12 @@ async function loadGameDetails(appId, requestId) {
   }
 
   const storeDetails = fetchStoreGameDetails(appId);
+  const botDetails = fetchBotGameDetails(appId);
   const backupDetails = fetchBackupGameDetails(appId);
   const storePageDetails = fetchStorePageGameDetails(appId);
 
   try {
-    const game = await Promise.any([storeDetails, backupDetails, storePageDetails]);
+    const game = await Promise.any([botDetails, storeDetails, backupDetails, storePageDetails]);
     if (!isActiveRequest(requestId)) return;
     writeCachedGameDetails(appId, game);
     renderGameDetails(appId, game);
