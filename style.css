@@ -5,23 +5,23 @@
   --panel: rgba(18, 18, 22, 0.72);
   --panel-strong: rgba(14, 15, 20, 0.9);
   --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(5, 255, 247, 0.28);
+  --border-strong: rgba(255, 64, 64, 0.3);
   --text: #f5f5f5;
   --muted: #9a9aa3;
   --soft: #d7d7dc;
-  --cyan: #05fff7;
-  --blue: #29a7ff;
-  --purple: #8b5cf6;
-  --magenta: #ff4fd8;
-  --discord: #5865f2;
-  --accent: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.15);
-  --accent-dim: rgba(59, 130, 246, 0.08);
+  --cyan: #ff4040;
+  --blue: #ff6b5f;
+  --purple: #c1121f;
+  --magenta: #ff8a80;
+  --discord: #e03131;
+  --accent: #ef233c;
+  --accent-glow: rgba(239, 35, 60, 0.2);
+  --accent-dim: rgba(239, 35, 60, 0.1);
   --shadow: 0 28px 95px rgba(0, 0, 0, 0.52);
   --shadow-soft: 0 16px 42px rgba(0, 0, 0, 0.3);
-  --glow-sm: 0 0 18px rgba(5, 255, 247, 0.12);
-  --glow: 0 0 34px rgba(5, 255, 247, 0.2), 0 0 78px rgba(139, 92, 246, 0.18);
-  --glow-strong: 0 0 34px rgba(5, 255, 247, 0.34), 0 0 98px rgba(139, 92, 246, 0.28);
+  --glow-sm: 0 0 18px rgba(255, 64, 64, 0.16);
+  --glow: 0 0 34px rgba(255, 64, 64, 0.24), 0 0 78px rgba(193, 18, 31, 0.22);
+  --glow-strong: 0 0 34px rgba(255, 64, 64, 0.38), 0 0 98px rgba(193, 18, 31, 0.32);
   --radius: 24px;
   --radius-sm: 16px;
   --max: 1180px;
@@ -53,7 +53,7 @@ body::before {
 body {
   min-height: 100vh;
   margin: 0;
-  font-family: "Inter", "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Sora", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.55;
@@ -68,7 +68,7 @@ body.nav-open {
 }
 
 body::selection {
-  background: rgba(5, 255, 247, 0.28);
+  background: rgba(255, 64, 64, 0.32);
 }
 
 a {
@@ -96,10 +96,10 @@ img {
   pointer-events: none;
   transform: translate3d(0, 0, 0);
   background:
-    radial-gradient(circle at 20% 10%, rgba(5, 255, 247, 0.18), transparent 28%),
-    radial-gradient(circle at 78% 18%, rgba(139, 92, 246, 0.24), transparent 30%),
-    radial-gradient(circle at 50% 85%, rgba(255, 79, 216, 0.11), transparent 34%),
-    linear-gradient(145deg, #070708 0%, #11131a 48%, #08080b 100%);
+    radial-gradient(circle at 20% 10%, rgba(255, 64, 64, 0.2), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(193, 18, 31, 0.26), transparent 30%),
+    radial-gradient(circle at 50% 85%, rgba(255, 138, 128, 0.12), transparent 34%),
+    linear-gradient(145deg, #080505 0%, #181014 48%, #090607 100%);
 }
 
 .site-bg::before {
@@ -109,8 +109,8 @@ img {
   opacity: 0.18;
   background:
     radial-gradient(circle at 22% 34%, rgba(255, 255, 255, 0.18) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 74% 62%, rgba(5, 255, 247, 0.2) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 48% 18%, rgba(139, 92, 246, 0.22) 0 1px, transparent 1.5px);
+    radial-gradient(circle at 74% 62%, rgba(255, 64, 64, 0.22) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 48% 18%, rgba(193, 18, 31, 0.24) 0 1px, transparent 1.5px);
   background-size: 120px 120px, 170px 170px, 220px 220px;
   animation: none;
 }
@@ -128,13 +128,13 @@ img {
 .mesh-a {
   left: -12rem;
   top: 14rem;
-  background: rgba(5, 255, 247, 0.32);
+  background: rgba(255, 64, 64, 0.34);
 }
 
 .mesh-b {
   right: -15rem;
   top: 26rem;
-  background: rgba(139, 92, 246, 0.4);
+  background: rgba(193, 18, 31, 0.42);
   animation-delay: -8s;
 }
 
@@ -167,7 +167,7 @@ img {
   border: 1px solid rgba(41, 167, 255, 0.3);
   border-radius: 14px;
   background:
-    linear-gradient(135deg, rgba(41, 167, 255, 0.16), rgba(139, 92, 246, 0.12)),
+    linear-gradient(135deg, rgba(255, 107, 95, 0.18), rgba(193, 18, 31, 0.14)),
     rgba(10, 10, 18, 0.74);
   color: rgba(245, 245, 245, 0.9);
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.22), 0 0 28px rgba(41, 167, 255, 0.08);
@@ -181,7 +181,7 @@ img {
 .theme-ps span {
   color: var(--cyan);
   margin-right: 4px;
-  text-shadow: 0 0 16px rgba(5, 255, 247, 0.42);
+  text-shadow: 0 0 16px rgba(255, 64, 64, 0.42);
 }
 
 .topbar {
@@ -201,7 +201,7 @@ img {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 42%),
     rgba(10, 10, 20, 0.62);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.36), 0 0 42px rgba(5, 255, 247, 0.08);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.36), 0 0 42px rgba(255, 64, 64, 0.08);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backface-visibility: hidden;
@@ -226,7 +226,7 @@ img {
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  box-shadow: 0 0 22px rgba(5, 255, 247, 0.2);
+  box-shadow: 0 0 22px rgba(255, 64, 64, 0.2);
 }
 
 .brand-logo {
@@ -295,7 +295,7 @@ img {
 
 .nav-links .nav-download {
   color: #fff;
-  border-color: rgba(59, 130, 246, 0.56);
+  border-color: rgba(239, 35, 60, 0.56);
   background: var(--accent);
   box-shadow: 0 0 32px var(--accent-glow);
 }
@@ -398,7 +398,7 @@ img {
   place-items: center;
   padding: 7rem 0 5rem;
   text-align: center;
-  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59, 130, 246, 0.08), transparent 70%);
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(239, 35, 60, 0.11), transparent 70%);
 }
 
 .hero-copy {
@@ -426,12 +426,12 @@ p {
   font-size: clamp(4.4rem, 13vw, 9.5rem);
   line-height: 0.86;
   letter-spacing: 0;
-  background: linear-gradient(105deg, #f5f5f5 0%, var(--cyan) 26%, var(--purple) 55%, var(--magenta) 76%, #fff 100%);
+  background: linear-gradient(105deg, #fff5f5 0%, var(--cyan) 26%, var(--purple) 55%, var(--magenta) 76%, #fff 100%);
   background-size: 180% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 28px rgba(5, 255, 247, 0.22));
+  filter: drop-shadow(0 0 28px rgba(255, 64, 64, 0.22));
   animation: title-shimmer 8s ease-in-out infinite;
 }
 
@@ -472,8 +472,8 @@ p {
 
 .version-badge {
   color: var(--text) !important;
-  border-color: rgba(59, 130, 246, 0.36) !important;
-  background: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(239, 35, 60, 0.36) !important;
+  background: rgba(239, 35, 60, 0.12) !important;
 }
 
 .screenshot-frame {
@@ -583,10 +583,10 @@ p {
 
 .btn-primary {
   color: #050505;
-  border-color: rgba(5, 255, 247, 0.42);
+  border-color: rgba(255, 64, 64, 0.42);
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.72), transparent 28%),
-    linear-gradient(100deg, var(--cyan), #7cfbff, var(--purple), var(--magenta));
+    linear-gradient(100deg, var(--cyan), #ff7a70, var(--purple), var(--magenta));
   background-size: 100% 100%, 220% 100%;
   box-shadow: var(--glow-strong), inset 0 1px 0 rgba(255, 255, 255, 0.45);
   animation: gradient-shift 9s ease-in-out infinite;
@@ -594,22 +594,22 @@ p {
 
 .btn-primary:hover,
 .btn-primary:focus-visible {
-  box-shadow: 0 0 42px rgba(5, 255, 247, 0.42), 0 0 118px rgba(139, 92, 246, 0.34);
+  box-shadow: 0 0 42px rgba(255, 64, 64, 0.42), 0 0 118px rgba(193, 18, 31, 0.34);
 }
 
 .btn-secondary {
   color: var(--text);
-  border-color: rgba(5, 255, 247, 0.2);
+  border-color: rgba(255, 64, 64, 0.2);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
-    rgba(5, 255, 247, 0.035);
+    rgba(255, 64, 64, 0.035);
   box-shadow: var(--shadow-soft), var(--glow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .btn-secondary:hover,
 .btn-secondary:focus-visible {
-  border-color: rgba(5, 255, 247, 0.42);
-  box-shadow: var(--shadow-soft), 0 0 34px rgba(5, 255, 247, 0.18);
+  border-color: rgba(255, 64, 64, 0.42);
+  box-shadow: var(--shadow-soft), 0 0 34px rgba(255, 64, 64, 0.2);
 }
 
 .btn-ghost {
@@ -626,9 +626,9 @@ p {
 }
 
 .btn-discord {
-  border-color: rgba(88, 101, 242, 0.42);
-  background: linear-gradient(90deg, var(--discord), #a855f7);
-  box-shadow: 0 0 28px rgba(88, 101, 242, 0.3), 0 0 66px rgba(168, 85, 247, 0.2);
+  border-color: rgba(239, 35, 60, 0.42);
+  background: linear-gradient(90deg, var(--discord), #ff6b5f);
+  box-shadow: 0 0 28px rgba(239, 35, 60, 0.3), 0 0 66px rgba(255, 107, 95, 0.2);
 }
 
 .metric-strip {
@@ -749,8 +749,8 @@ p {
   color: var(--cyan);
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.16), transparent 48%),
-    rgba(5, 255, 247, 0.1);
-  border: 1px solid rgba(5, 255, 247, 0.22);
+    rgba(255, 64, 64, 0.1);
+  border: 1px solid rgba(255, 64, 64, 0.22);
   box-shadow: var(--glow-sm);
   transition: transform 200ms ease;
 }
@@ -765,12 +765,12 @@ p {
   right: 18px;
   z-index: 2;
   padding: 4px 9px;
-  border: 1px solid rgba(59, 130, 246, 0.34);
+  border: 1px solid rgba(239, 35, 60, 0.34);
   border-radius: 999px;
-  color: #bfdbfe;
+  color: #fecaca;
   font-size: 0.72rem;
   font-weight: 700;
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(239, 35, 60, 0.12);
 }
 
 .feature-download-btn {
@@ -779,7 +779,7 @@ p {
   gap: 7px;
   margin-top: 14px;
   padding: 8px 16px;
-  color: #93c5fd;
+  color: #fca5a5;
   border: 1px solid rgba(126, 184, 247, 0.35);
   border-radius: 8px;
   text-decoration: none;
@@ -805,14 +805,14 @@ p {
 }
 
 .discord-feature-btn {
-  color: #c7d2fe;
-  border-color: rgba(88, 101, 242, 0.45);
+  color: #fecaca;
+  border-color: rgba(239, 35, 60, 0.45);
 }
 
 .discord-feature-btn:hover,
 .discord-feature-btn:focus-visible {
-  background: rgba(88, 101, 242, 0.14);
-  border-color: rgba(88, 101, 242, 0.72);
+  background: rgba(239, 35, 60, 0.14);
+  border-color: rgba(239, 35, 60, 0.72);
 }
 
 .feature-card h3,
@@ -889,10 +889,10 @@ p {
   width: fit-content;
   margin: 4px 0 18px;
   padding: 6px 12px;
-  border: 1px solid rgba(88, 101, 242, 0.26);
+  border: 1px solid rgba(239, 35, 60, 0.26);
   border-radius: 999px;
-  color: #c7d2fe !important;
-  background: rgba(88, 101, 242, 0.11);
+  color: #fecaca !important;
+  background: rgba(239, 35, 60, 0.11);
 }
 
 .guide-grid {
@@ -948,7 +948,7 @@ p {
   position: absolute;
   inset: auto -12% -30% 45%;
   height: 360px;
-  background: radial-gradient(circle, rgba(88, 101, 242, 0.26), transparent 68%);
+  background: radial-gradient(circle, rgba(239, 35, 60, 0.28), transparent 68%);
   pointer-events: none;
 }
 
@@ -978,9 +978,9 @@ p {
 .discord-grid article,
 .featured-project {
   padding: 20px;
-  border: 1px solid rgba(88, 101, 242, 0.2);
+  border: 1px solid rgba(239, 35, 60, 0.2);
   border-radius: 18px;
-  background: rgba(88, 101, 242, 0.07);
+  background: rgba(239, 35, 60, 0.07);
 }
 
 .resource-row {
@@ -992,10 +992,10 @@ p {
 
 .resource-row span {
   padding: 10px 12px;
-  border: 1px solid rgba(5, 255, 247, 0.18);
+  border: 1px solid rgba(255, 64, 64, 0.18);
   border-radius: 999px;
   color: var(--soft);
-  background: rgba(5, 255, 247, 0.06);
+  background: rgba(255, 64, 64, 0.06);
 }
 
 .footer {
