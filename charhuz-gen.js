@@ -2,21 +2,21 @@ const DATABASES = [
   {
     id: "database-1",
     label: "Database 1",
-    base: "https://raw.githubusercontent.com/BlissBlender/Charon-Database/main/database-1/"
+    base: "https://raw.githubusercontent.com/BlissBlender/Charhuz-Database/main/database-1/"
   },
   {
     id: "database-2",
     label: "Database 2",
-    base: "https://raw.githubusercontent.com/BlissBlender/Charon-Database/main/database-2/"
+    base: "https://raw.githubusercontent.com/BlissBlender/Charhuz-Database/main/database-2/"
   }
 ];
 
 const GAMEGEN_API =
   "https://gamegen.lol/api/mg_cca51ec305a5494a946454fcc21cf1c3/generate/";
-const BACKFILL_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/backfill";
-const BACKFILL_HEALTH_ENDPOINT = "https://charon-bot.vyro.workers.dev/health";
-const BOT_STEAM_SUGGEST_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/steam-suggest";
-const BOT_GAME_DETAILS_ENDPOINT = "https://charon-bot.vyro.workers.dev/api/game-details";
+const BACKFILL_ENDPOINT = "https://charhuz-bot.vyro.workers.dev/api/backfill";
+const BACKFILL_HEALTH_ENDPOINT = "https://charhuz-bot.vyro.workers.dev/health";
+const BOT_STEAM_SUGGEST_ENDPOINT = "https://charhuz-bot.vyro.workers.dev/api/steam-suggest";
+const BOT_GAME_DETAILS_ENDPOINT = "https://charhuz-bot.vyro.workers.dev/api/game-details";
 
 const STORE_DETAILS_URL =
   "https://store.steampowered.com/api/appdetails?appids=";
@@ -46,7 +46,7 @@ const MANIFEST_SOURCES = [
 const DEPOT_ADDAPPID_RE = /addappid\s*\(\s*(\d+)\s*,\s*\d+\s*,\s*["'][a-fA-F0-9]+["']/gi;
 const DIRECT_MANIFEST_FILE_RE = /\b(\d{3,})_(\d{3,})\.manifest\b/gi;
 
-const GAME_DETAILS_CACHE_PREFIX = "charon.game.";
+const GAME_DETAILS_CACHE_PREFIX = "charhuz.game.";
 const GAME_DETAILS_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 const DIRECT_JSON_PROXY = {
@@ -260,7 +260,7 @@ function scheduleBackfill(payload) {
           cache: "no-store"
         });
         if (!health.ok) {
-          console.debug("Charon backfill health check failed", await health.text());
+          console.debug("Charhuz backfill health check failed", await health.text());
           return;
         }
 
@@ -271,14 +271,14 @@ function scheduleBackfill(payload) {
           keepalive: false
         });
         if (!response.ok) {
-          console.debug("Charon backfill skipped", await response.text());
+          console.debug("Charhuz backfill skipped", await response.text());
         }
       } catch (error) {
-        console.debug("Charon backfill endpoint unavailable", error);
+        console.debug("Charhuz backfill endpoint unavailable", error);
       }
     }, 0);
   } catch (error) {
-    console.debug("Charon backfill scheduling skipped", error);
+    console.debug("Charhuz backfill scheduling skipped", error);
   }
 }
 
@@ -311,7 +311,7 @@ function renderSuggestions(suggestions) {
   suggestionList.innerHTML = suggestions.map((item, index) => {
     const imageCandidates = steamSuggestionImageCandidates(item.appId, item.image);
     const thumb = imageCandidates.length
-      ? `<img src="${escapeHtml(imageCandidates[0])}" alt="" loading="lazy" decoding="async" data-index="0" data-candidates="${escapeHtml(imageCandidates.join("|"))}">`
+      ? `<img src="${escapeHtml(imageCandidates[0])}" alt="" loading="lazy" decoding="async" data-appid="${escapeHtml(item.appId)}" data-index="0" data-candidates="${escapeHtml(imageCandidates.join("|"))}">`
       : `ID ${escapeHtml(item.appId)}`;
 
     return `
@@ -351,7 +351,7 @@ function normalizeBotSuggestions(items) {
       const match = label.match(/\((\d+)\)\s*$/);
       const appId = value || match?.[1] || "";
       const name = label.replace(/\s*\(\d+\)\s*$/, "").trim();
-      return appId && name ? { appId, name, image: "", price: "", startsWithTerm: false } : null;
+      return appId && name ? { appId, name, image: item.image || "", price: "", startsWithTerm: false } : null;
     })
     .filter(Boolean)
     .slice(0, 25);
@@ -384,7 +384,7 @@ function handleSuggestionImageError(event) {
 
   const thumb = image.closest(".suggestion-thumb");
   thumb.classList.add("is-fallback");
-  thumb.textContent = "ID";
+  thumb.textContent = image.dataset.appid || "ID";
 }
 
 function updateActiveSuggestion(nextIndex) {
@@ -920,15 +920,23 @@ async function downloadMissingManifests(fileNames, appId) {
   const cache = new Map();
   const manifests = [];
   const added = new Set();
+  const uniqueFiles = [...new Set(fileNames)];
+  const batchSize = 48;
 
-  for (const fileName of fileNames) {
-    const found = await findManifestInSources(fileName, cache);
-    if (!found || added.has(found.fileName.toLowerCase())) continue;
-    added.add(found.fileName.toLowerCase());
-    manifests.push(found);
+  for (let index = 0; index < uniqueFiles.length; index += batchSize) {
+    const batch = uniqueFiles.slice(index, index + batchSize);
+    setStatus(`Adding optional manifests ${Math.min(index + batch.length, uniqueFiles.length)}/${uniqueFiles.length}...`, 42 + Math.round((index / uniqueFiles.length) * 44));
+    const results = await Promise.all(batch.map((fileName) =>
+      findManifestInSources(fileName, cache).catch(() => null)
+    ));
+    for (const found of results) {
+      if (!found || added.has(found.fileName.toLowerCase())) continue;
+      added.add(found.fileName.toLowerCase());
+      manifests.push(found);
+    }
   }
 
-  console.debug(`AppID ${appId}: added ${manifests.length}/${fileNames.length} optional manifest files.`);
+  console.debug(`AppID ${appId}: added ${manifests.length}/${uniqueFiles.length} optional manifest files.`);
   return manifests;
 }
 
@@ -939,6 +947,9 @@ function summarizeManifestSources(manifests) {
 async function collectRequiredManifests(appId, luaBytes) {
   try {
     const requiredFiles = await requiredManifestFileNamesForLuaEntries(appId, [{ name: `${appId}.lua`, bytes: luaBytes }]);
+    if (requiredFiles.length) {
+      setStatus(`Detected ${requiredFiles.length} optional manifest files. Bundling now...`, 40);
+    }
     return downloadMissingManifests(requiredFiles, appId);
   } catch (error) {
     console.debug(`Manifest enrichment skipped for ${appId}`, error);
@@ -981,12 +992,12 @@ async function generateLuaZip(appId, luaUrl) {
 
   return {
     kind: "generated-lua",
-    source: "Used Charon Repo",
+    source: "Used Charhuz Repo",
     manifestSource: summarizeManifestSources(manifests),
     url: currentBlobUrl,
     fileName: `${appId}.zip`,
     downloadAttribute: `${appId}.zip`,
-    description: `${appId}.lua was found in Charon Repo and packed into a ZIP.`
+    description: `${appId}.lua was found in Charhuz Repo and packed into a ZIP.`
   };
 }
 
@@ -998,7 +1009,7 @@ async function generateDatabaseZip(appId, zipUrl, fileName, description) {
 
     return {
       kind: "database-zip",
-      source: "Used Charon Repo",
+      source: "Used Charhuz Repo",
       manifestSource: enriched.manifestSource,
       url: currentBlobUrl,
       fileName,
@@ -1011,7 +1022,7 @@ async function generateDatabaseZip(appId, zipUrl, fileName, description) {
     console.debug(`Database ZIP enrichment failed for ${appId}`, error);
     return {
       kind: "database-zip",
-      source: "Used Charon Repo",
+      source: "Used Charhuz Repo",
       manifestSource: "",
       url: zipUrl,
       fileName,
@@ -1023,12 +1034,12 @@ async function generateDatabaseZip(appId, zipUrl, fileName, description) {
 async function resolveDatabase(appId, database, progressStart) {
   const base = database.base;
 
-  setStatus("Checking Charon Repo for a Lua package...", progressStart + 4);
+  setStatus("Checking Charhuz Repo for a Lua package...", progressStart + 4);
   const luaUrl = databaseUrl(base, `${appId}.lua`);
   try {
     return {
       ...(await generateLuaZip(appId, luaUrl)),
-      database: "Charon Repo"
+      database: "Charhuz Repo"
     };
   } catch (error) {
     if (!String(error.message || "").includes("HTTP 404")) {
@@ -1036,16 +1047,16 @@ async function resolveDatabase(appId, database, progressStart) {
     }
   }
 
-  setStatus("Checking Charon Repo for a ZIP package...", progressStart + 12);
+  setStatus("Checking Charhuz Repo for a ZIP package...", progressStart + 12);
   const directZipUrl = databaseUrl(base, `${appId}.zip`);
   if (await resourceExists(directZipUrl)) {
     return {
-      ...(await generateDatabaseZip(appId, directZipUrl, `${appId}.zip`, `${appId}.zip was found in Charon Repo.`)),
-      database: "Charon Repo",
+      ...(await generateDatabaseZip(appId, directZipUrl, `${appId}.zip`, `${appId}.zip was found in Charhuz Repo.`)),
+      database: "Charhuz Repo",
     };
   }
 
-  setStatus("Checking Charon Repo package map...", progressStart + 20);
+  setStatus("Checking Charhuz Repo package map...", progressStart + 20);
   let mapped = null;
   try {
     mapped = await getMappedZip(base, appId);
@@ -1055,8 +1066,8 @@ async function resolveDatabase(appId, database, progressStart) {
 
   if (mapped) {
     return {
-      ...(await generateDatabaseZip(appId, mapped.url, mapped.fileName, `${mapped.fileName} was found in Charon Repo.`)),
-      database: "Charon Repo",
+      ...(await generateDatabaseZip(appId, mapped.url, mapped.fileName, `${mapped.fileName} was found in Charhuz Repo.`)),
+      database: "Charhuz Repo",
     };
   }
 
@@ -1440,7 +1451,7 @@ if (/^\d+$/.test(initialAppId)) {
   window.setTimeout(() => generateForAppId(initialAppId), 0);
 }
 
-window.CharonGen = {
+window.CharhuzGen = {
   resolveDatabase,
   resolvePackage,
   resolveExternalApi,

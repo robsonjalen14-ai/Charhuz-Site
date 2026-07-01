@@ -1,7 +1,7 @@
 {
-  "name": "Charon Manifest Tool",
-  "short_name": "Charon",
-  "description": "Premium Steam manifest and Lua management website for Charon.",
+  "name": "Charhuz Manifest Tool",
+  "short_name": "Charhuz",
+  "description": "Premium Steam manifest and Lua management website for Charhuz.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

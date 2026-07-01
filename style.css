@@ -46,7 +46,7 @@ body::before {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.22;
+  opacity: 0.14;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
@@ -112,7 +112,7 @@ img {
     radial-gradient(circle at 74% 62%, rgba(5, 255, 247, 0.2) 0 1px, transparent 1.5px),
     radial-gradient(circle at 48% 18%, rgba(139, 92, 246, 0.22) 0 1px, transparent 1.5px);
   background-size: 120px 120px, 170px 170px, 220px 220px;
-  animation: particle-drift 34s linear infinite;
+  animation: none;
 }
 
 .mesh {
@@ -122,8 +122,7 @@ img {
   border-radius: 50%;
   filter: blur(22px);
   opacity: 0.18;
-  animation: drift 34s ease-in-out infinite;
-  will-change: transform;
+  animation: none;
 }
 
 .mesh-a {

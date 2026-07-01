@@ -42,7 +42,7 @@ function toggleNav() {
 function openLightbox(src, alt) {
   if (!lightbox || !lightboxImage) return;
   lightboxImage.src = src;
-  lightboxImage.alt = alt || "Charon screenshot";
+  lightboxImage.alt = alt || "Charhuz screenshot";
   lightbox.classList.add("is-open");
   lightbox.setAttribute("aria-hidden", "false");
   document.body.classList.add("nav-open");
